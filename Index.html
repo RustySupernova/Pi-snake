@@ -1,0 +1,557 @@
+"<!DOCTYPE html>
+
+<html lang=""zh-CN"">
+
+<head>
+
+    <meta charset=""UTF-8"">
+
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">
+
+    <title>π 极客贪吃蛇 Pro</title>
+
+    <style>
+
+        :root {
+
+            --primary-bg: #2c3e50;
+
+            --canvas-bg: #34495e;
+
+            --text-color: #ecf0f1;
+
+            --accent-color: #2ecc71;
+
+            --snake-color: #2ecc71;
+
+        }
+
+
+
+        body {
+
+            background-color: var(--primary-bg);
+
+            color: var(--text-color);
+
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+            margin: 0;
+
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            overflow: hidden; /* 防止移动端滑动导致页面滚动 */
+
+            touch-action: none; /* 禁用系统手势 */
+
+        }
+
+
+
+        /* 菜单栏样式 */
+
+        #menu-btn {
+
+            position: absolute;
+
+            top: 15px;
+
+            right: 15px;
+
+            font-size: 24px;
+
+            cursor: pointer;
+
+            z-index: 100;
+
+            background: rgba(0,0,0,0.3);
+
+            padding: 5px 10px;
+
+            border-radius: 5px;
+
+        }
+
+
+
+        #sidebar {
+
+            position: fixed;
+
+            top: 0; right: -280px;
+
+            width: 250px; height: 100%;
+
+            background: #1a252f;
+
+            transition: 0.3s;
+
+            z-index: 101;
+
+            padding: 20px;
+
+            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
+
+        }
+
+
+
+        #sidebar.active { right: 0; }
+
+
+
+        .setting-item { margin-bottom: 25px; }
+
+        label { display: block; margin-bottom: 8px; font-size: 14px; opacity: 0.8; }
+
+        select, input { width: 100%; padding: 8px; background: #34495e; color: white; border: none; border-radius: 4px; }
+
+
+
+        /* 游戏区域 */
+
+        #game-container {
+
+            position: relative;
+
+            margin-top: 60px;
+
+        }
+
+
+
+        canvas {
+
+            background-color: var(--canvas-bg);
+
+            border: 4px solid #bdc3c7;
+
+            border-radius: 8px;
+
+            max-width: 90vw;
+
+            max-height: 70vh;
+
+        }
+
+
+
+        /* 滤镜效果 */
+
+        .filter-retro { filter: sepia(0.8) contrast(1.2) brightness(0.9); }
+
+        .filter-neon { filter: saturate(2) drop-shadow(0 0 5px var(--snake-color)); }
+
+        .filter-bw { filter: grayscale(1); }
+
+
+
+        #pi-display {
+
+            width: 90%;
+
+            word-wrap: break-word;
+
+            text-align: center;
+
+            margin-top: 15px;
+
+            font-size: 18px;
+
+            color: #f1c40f;
+
+            height: 60px;
+
+            overflow-y: auto;
+
+        }
+
+
+
+        #game-over {
+
+            position: absolute;
+
+            top: 0; left: 0; width: 100%; height: 100%;
+
+            background: rgba(0,0,0,0.85);
+
+            display: none;
+
+            flex-direction: column;
+
+            justify-content: center;
+
+            align-items: center;
+
+            text-align: center;
+
+        }
+
+
+
+        button {
+
+            padding: 12px 30px;
+
+            background: var(--accent-color);
+
+            border: none; color: white; border-radius: 25px;
+
+            font-size: 18px; cursor: pointer;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <div id=""menu-btn"" onclick=""toggleSidebar()"">⚙️ 菜单</div>
+
+
+
+    <div id=""sidebar"">
+
+        <h3>游戏设置</h3>
+
+        <div class=""setting-item"">
+
+            <label>速度 (难度)</label>
+
+            <select id=""speed-select"" onchange=""updateSettings()"">
+
+                <option value=""200"">新手 (慢)</option>
+
+                <option value=""120"" selected>普通</option>
+
+                <option value=""70"">极速 (快)</option>
+
+            </select>
+
+        </div>
+
+        <div class=""setting-item"">
+
+            <label>画面滤镜</label>
+
+            <select id=""filter-select"" onchange=""updateSettings()"">
+
+                <option value=""none"">无</option>
+
+                <option value=""filter-retro"">复古 (Retro)</option>
+
+                <option value=""filter-neon"">霓虹 (Neon)</option>
+
+                <option value=""filter-bw"">黑白 (B&W)</option>
+
+            </select>
+
+        </div>
+
+        <div class=""setting-item"">
+
+            <label>蛇身颜色</label>
+
+            <input type=""color"" id=""color-picker"" value=""#2ecc71"" onchange=""updateSettings()"">
+
+        </div>
+
+        <button onclick=""toggleSidebar()"">返回游戏代</button>
+
+    </div>
+
+
+
+    <div id=""game-container"">
+
+        <canvas id=""gameCanvas"" width=""400"" height=""400""></canvas>
+
+        <div id=""game-over"">
+
+            <h2 style=""color:#e74c3c"">游戏结束</h2>
+
+            <p>背诵长度: <span id=""final-score"">0</span></p>
+
+            <button onclick=""resetGame()"">重新开始</button>
+
+        </div>
+
+    </div>
+
+
+
+    <div id=""pi-display"">3.</div>
+
+    <p style=""font-size:12px; color:#95a5a6; margin-top:10px;"">PC: 方向键 | 手机: 四向滑动</p>
+
+
+
+    <script>
+
+        const canvas = document.getElementById(""gameCanvas"");
+
+        const ctx = canvas.getContext(""2d"");
+
+        const PI_DIGITS = ""14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196"";
+
+        
+
+        let TILE_SIZE = 20;
+
+        let GRID_SIZE = canvas.width / TILE_SIZE;
+
+        let snake, chars, dx, dy, food, piIndex, gameOver, gameLoop;
+
+        let gameSpeed = 120;
+
+
+
+        // 触摸坐标
+
+        let touchStartX = 0;
+
+        let touchStartY = 0;
+
+
+
+        function toggleSidebar() {
+
+            document.getElementById('sidebar').classList.toggle('active');
+
+        }
+
+
+
+        function updateSettings() {
+
+            gameSpeed = parseInt(document.getElementById('speed-select').value);
+
+            const filter = document.getElementById('filter-select').value;
+
+            canvas.className = filter;
+
+            document.documentElement.style.setProperty('--snake-color', document.getElementById('color-picker').value);
+
+            
+
+            if(!gameOver) {
+
+                clearInterval(gameLoop);
+
+                gameLoop = setInterval(update, gameSpeed);
+
+            }
+
+        }
+
+
+
+        function resetGame() {
+
+            snake = [{x: 10, y: 10}];
+
+            chars = [""3.""];
+
+            dx = 0; dy = 0;
+
+            piIndex = 0;
+
+            gameOver = false;
+
+            document.getElementById(""game-over"").style.display = ""none"";
+
+            spawnFood();
+
+            updateUI();
+
+            clearInterval(gameLoop);
+
+            gameLoop = setInterval(update, gameSpeed);
+
+        }
+
+
+
+        function spawnFood() {
+
+            food = {
+
+                x: Math.floor(Math.random() * GRID_SIZE),
+
+                y: Math.floor(Math.random() * GRID_SIZE)
+
+            };
+
+            if (snake.some(s => s.x === food.x && s.y === food.y)) spawnFood();
+
+        }
+
+
+
+        function updateUI() {
+
+            document.getElementById(""pi-display"").innerText = chars.join("""");
+
+        }
+
+
+
+        function update() {
+
+            if (gameOver || (dx === 0 && dy === 0)) return;
+
+
+
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+
+
+            if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE ||
+
+                snake.some(s => s.x === head.x && s.y === head.y)) {
+
+                gameOver = true;
+
+                document.getElementById(""game-over"").style.display = ""flex"";
+
+                document.getElementById(""final-score"").innerText = piIndex;
+
+                return;
+
+            }
+
+
+
+            snake.unshift(head);
+
+            if (head.x === food.x && head.y === food.y) {
+
+                chars.push(PI_DIGITS[piIndex]);
+
+                piIndex++;
+
+                spawnFood();
+
+                updateUI();
+
+            } else {
+
+                snake.pop();
+
+            }
+
+            draw();
+
+        }
+
+
+
+        function draw() {
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            
+
+            // 绘制食物
+
+            ctx.fillStyle = ""#e74c3c"";
+
+            ctx.font = `bold ${TILE_SIZE}px Arial`;
+
+            ctx.textAlign = ""center"";
+
+            ctx.fillText(PI_DIGITS[piIndex], food.x * TILE_SIZE + TILE_SIZE/2, food.y * TILE_SIZE + TILE_SIZE/2 + 7);
+
+
+
+            // 绘制蛇
+
+            snake.forEach((seg, i) => {
+
+                ctx.fillStyle = i === 0 ? ""#fff"" : document.getElementById('color-picker').value;
+
+                ctx.fillText(chars[i], seg.x * TILE_SIZE + TILE_SIZE/2, seg.y * TILE_SIZE + TILE_SIZE/2 + 7);
+
+            });
+
+        }
+
+
+
+        // 键盘控制
+
+        window.addEventListener(""keydown"", e => {
+
+            if (e.key === 'ArrowUp' && dy === 0) { dx = 0; dy = -1; }
+
+            if (e.key === 'ArrowDown' && dy === 0) { dx = 0; dy = 1; }
+
+            if (e.key === 'ArrowLeft' && dx === 0) { dx = -1; dy = 0; }
+
+            if (e.key === 'ArrowRight' && dx === 0) { dx = 1; dy = 0; }
+
+        });
+
+
+
+        // 触摸控制逻辑
+
+        canvas.addEventListener('touchstart', e => {
+
+            touchStartX = e.touches[0].clientX;
+
+            touchStartY = e.touches[0].clientY;
+
+        }, false);
+
+
+
+        canvas.addEventListener('touchmove', e => {
+
+            e.preventDefault(); // 阻止滚动
+
+        }, {passive: false});
+
+
+
+        canvas.addEventListener('touchend', e => {
+
+            let diffX = e.changedTouches[0].clientX - touchStartX;
+
+            let diffY = e.changedTouches[0].clientY - touchStartY;
+
+            
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+
+                if (diffX > 30 && dx === 0) { dx = 1; dy = 0; }
+
+                else if (diffX < -30 && dx === 0) { dx = -1; dy = 0; }
+
+            } else {
+
+                if (diffY > 30 && dy === 0) { dx = 0; dy = 1; }
+
+                else if (diffY < -30 && dy === 0) { dx = 0; dy = -1; }
+
+            }
+
+        }, false);
+
+
+
+        resetGame();
+
+    </script>
+
+</body>
+
+</html>"
