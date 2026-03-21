@@ -77,41 +77,41 @@
             <canvas id="gameCanvas"></canvas>
             
             <div id="game-over" class="overlay">
-                <h2 style="font-size:36px; color:#e74c3c;">游戏结束</h2>
-                <p style="font-size:18px;">你背到了 π 的后 <span id="final-score" style="font-weight:bold; color:#f1c40f;">0</span> 位</p>
-                <button id="reset-btn" class="action-btn">再来一次</button>
+                <h2 style="font-size:36px; color:#e74c3c;">Game Over</h2>
+                <p style="font-size:18px;">You have reached<span id="final-score" style="font-weight:bold; color:#f1c40f;">0</span> of π</p>
+                <button id="reset-btn" class="action-btn">Restart</button>
             </div>
 
             <div id="settings-menu" class="overlay">
-                <h2 style="margin-top:0; font-size:28px;">游戏设置</h2>
+                <h2 style="margin-top:0; font-size:28px;">Settings</h2>
                 
                 <div class="setting-item">
-                    <label>画面风格:</label>
+                    <label>Styles:</label>
                     <select id="theme-select">
-                        <option value="neon" selected>动态霓虹 (炫波)</option>
-                        <option value="retro">复古像素 (黑白)</option>
-                        <option value="default">默认 (经典)</option>
+                        <option value="neon" selected>Neon</option>
+                        <option value="retro">Retro</option>
+                        <option value="default">Default</option>
                     </select>
                 </div>
 
                 <div class="setting-item">
-                    <label>数字字体:</label>
+                    <label>Font:</label>
                     <select id="font-select">
-                        <option value="'Press Start 2P'">像素: Press Start</option>
-                        <option value="'VT323'">像素: VT323</option>
-                        <option value="'Silkscreen'">像素: Silkscreen</option>
-                        <option value="'Pixelify Sans'">像素: Pixelify</option>
-                        <option value="Arial">无衬线: Arial</option>
-                        <option value="'Comic Sans MS'">漫画: Comic Sans</option>
+                        <option value="'Press Start 2P'">Press Start</option>
+                        <option value="'VT323'">VT323</option>
+                        <option value="'Silkscreen'">Silkscreen</option>
+                        <option value="'Pixelify Sans'">Pixelify</option>
+                        <option value="Arial">Arial</option>
+                        <option value="'Comic Sans MS'">Comic Sans</option>
                     </select>
                 </div>
 
                 <div class="setting-item">
-                    <label>蛇的流速:</label>
+                    <label>Speed:</label>
                     <select id="speed-select">
-                        <option value="150" selected>普通</option>
-                        <option value="100">快速</option>
-                        <option value="60">极速</option>
+                        <option value="150" selected>Slow</option>
+                        <option value="100">Mid</option>
+                        <option value="60">Fast</option>
                     </select>
                 </div>
 
