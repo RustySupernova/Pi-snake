@@ -1,781 +1,499 @@
-"<!DOCTYPE html>
-
-<html lang=""zh-CN"">
-
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-
-    <meta charset=""UTF-8"">
-
-    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">
-
-    <title>圆周率贪吃蛇 - Pi Snake</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>圆周率贪吃蛇 v2.0 - Fixed Mobile</title>
     <style>
-
         :root {
-
             --bg-color: #2c3e50;
-
             --text-color: #ecf0f1;
-
             --accent-color: #f1c40f;
+            --main-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --ui-bg: rgba(255, 255, 255, 0.1);
+            --border-color: #bdc3c7;
+        }
 
+        * {
+            box-sizing: border-box;
+            -webkit-touch-callout: none; /* Prevent callout on mobile long-press */
+            -webkit-user-select: none;   /* Prevent text selection */
+            user-select: none;
         }
 
         body {
-
             background-color: var(--bg-color);
-
             color: var(--text-color);
-
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
-            display: flex;
-
-            flex-direction: column;
-
-            align-items: center;
-
+            font-family: var(--main-font);
             margin: 0;
-
-            padding: 10px;
-
-            touch-action: none; /* 防止移动端滑动时页面滚动 */
-
-            transition: background-color 0.3s, color 0.3s;
-
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            overflow: hidden; /* Prevent scrolling the body */
+            transition: background-color 0.3s;
         }
 
-        h1 { margin: 10px 0; font-size: 28px; }
+        /* Top Bar */
+        #top-bar {
+            width: 100%;
+            height: 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            background: var(--ui-bg);
+            border-bottom: 2px solid var(--border-color);
+            z-index: 50;
+        }
 
-        
+        h1 { margin: 0; font-size: 20px; }
+        #menu-btn {
+            background: none; border: none;
+            color: var(--text-color);
+            font-size: 20px; cursor: pointer;
+            padding: 5px 10px;
+        }
 
-        /* 顶部信息栏 */
+        /* Game and Info Wrapper */
+        #game-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 10px;
+            z-index: 10;
+        }
 
         #ui-panel {
-
             width: 100%;
-
             max-width: 500px;
-
             display: flex;
-
             justify-content: space-between;
-
             align-items: center;
-
             margin-bottom: 10px;
-
             font-size: 16px;
-
             font-weight: bold;
-
         }
 
-        
-
-        #game-container { position: relative; }
-
-        
+        #game-area {
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border: 4px solid var(--border-color);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         canvas {
-
             background-color: #34495e;
-
-            border: 4px solid #bdc3c7;
-
-            border-radius: 8px;
-
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-
-            display: block;
-
             transition: filter 0.3s;
-
+            display: block;
+            touch-action: none; /* Crucial: isolates swipe strictly to the canvas */
         }
 
-        
-
-        /* 显示圆周率的区域 */
-
+        /* Bottom Info (Pi Sequence) */
         #pi-display {
-
             width: 100%;
-
             max-width: 500px;
-
-            word-wrap: break-word;
-
-            text-align: center;
-
-            margin-top: 15px;
-
-            font-size: 18px;
-
-            letter-spacing: 2px;
-
-            color: var(--accent-color);
-
             height: 60px;
-
+            margin-top: 15px;
+            font-size: 18px;
+            letter-spacing: 2px;
+            text-align: center;
+            word-wrap: break-word;
             overflow-y: auto;
-
+            color: var(--accent-color);
+            padding: 0 10px;
         }
 
-
-
-        /* 菜单按钮 */
-
-        #menu-btn {
-
+        /* Overlays (Game Over, Settings) */
+        .overlay {
             position: absolute;
-
-            top: 15px;
-
-            right: 15px;
-
-            background: rgba(255,255,255,0.2);
-
-            border: none;
-
-            color: var(--text-color);
-
-            padding: 8px 12px;
-
-            border-radius: 5px;
-
-            cursor: pointer;
-
-            font-size: 16px;
-
-            z-index: 10;
-
-        }
-
-
-
-        /* 设置菜单遮罩 */
-
-        #settings-menu {
-
-            position: absolute;
-
             top: 0; left: 0; width: 100%; height: 100%;
-
-            background: rgba(0, 0, 0, 0.85);
-
+            background: rgba(0, 0, 0, 0.9);
             display: none;
-
             flex-direction: column;
-
             justify-content: center;
-
             align-items: center;
-
+            z-index: 40;
             border-radius: 8px;
-
-            z-index: 20;
-
             color: white;
-
+            padding: 20px;
+            text-align: center;
         }
 
-        .setting-item { margin: 10px 0; display: flex; align-items: center; gap: 10px; }
-
-        select, input[type=""color""] { padding: 5px; font-size: 16px; border-radius: 4px; }
-
-        
-
-        #game-over {
-
-            position: absolute;
-
-            top: 0; left: 0; width: 100%; height: 100%;
-
-            background: rgba(0, 0, 0, 0.8);
-
-            display: none;
-
-            flex-direction: column;
-
-            justify-content: center;
-
-            align-items: center;
-
-            border-radius: 8px;
-
-            z-index: 15;
-
-        }
+        #settings-menu.visible, #game-over.visible { display: flex; }
 
         #game-over h2 { color: #e74c3c; font-size: 32px; margin-bottom: 10px; }
-
+        
         button.action-btn {
-
-            padding: 10px 20px;
-
-            font-size: 16px;
-
+            padding: 12px 24px;
+            font-size: 18px;
             cursor: pointer;
-
             background-color: #2ecc71;
-
             color: white;
-
             border: none;
-
             border-radius: 5px;
-
-            margin-top: 15px;
-
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
 
-        .instructions { font-size: 12px; opacity: 0.7; margin-top: 5px; text-align: center;}
+        button.action-btn:active { transform: translateY(2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 
+        .instructions { font-size: 14px; opacity: 0.8; margin-top: 10px; line-height: 1.4; }
+
+        /* Settings specific styles */
+        .setting-item { margin: 15px 0; display: flex; align-items: center; gap: 15px; width: 100%; justify-content: center;}
+        select, input[type="color"] { padding: 8px; font-size: 16px; border-radius: 4px; border: 1px solid #7f8c8d;}
+        #custom-colors { display: none; flex-direction: column; gap: 8px; margin-top: 10px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; width: 100%; max-width: 300px;}
+        .close-menu-btn { background: none; border: none; color: #7f8c8d; font-size: 24px; position: absolute; top: 10px; right: 10px; cursor: pointer;}
         
-
-        /* 自定义颜色面板隐藏 */
-
-        #custom-colors { display: none; flex-direction: column; gap: 5px; margin-top: 10px; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px;}
-
     </style>
-
 </head>
-
 <body>
 
-
-
-    <button id=""menu-btn"" onclick=""toggleMenu()"">⚙️ 设置</button>
-
-    <h1>π 贪吃蛇</h1>
-
-    
-
-    <div id=""ui-panel"">
-
-        <div>长度: <span id=""score"">1</span></div>
-
-        <div>找数字: <span id=""target-digit"" style=""color:#e74c3c; font-size: 22px;"">1</span></div>
-
+    <div id="top-bar">
+        <h1>π 贪吃蛇 v2.0</h1>
+        <button id="menu-btn" title="设置">⚙️</button>
     </div>
 
-
-
-    <div id=""game-container"">
-
-        <canvas id=""gameCanvas""></canvas>
-
-        
-
-        <div id=""game-over"">
-
-            <h2>游戏结束!</h2>
-
-            <p>背到了圆周率后 <span id=""final-score"">0</span> 位</p>
-
-            <button class=""action-btn"" onclick=""resetGame()"">再来一次</button>
-
+    <div id="game-wrapper">
+        <div id="ui-panel">
+            <div>长度: <span id="score">1</span></div>
+            <div>找数字: <span id="target-digit" style="color:#e74c3c; font-size: 22px;">1</span></div>
         </div>
 
-
-
-        <div id=""settings-menu"">
-
-            <h2>游戏设置</h2>
-
-            <div class=""setting-item"">
-
-                <label>难度 (速度):</label>
-
-                <select id=""speed-select"" onchange=""changeSpeed(this.value)"">
-
-                    <option value=""200"">慢速 (新手)</option>
-
-                    <option value=""150"" selected>中速 (普通)</option>
-
-                    <option value=""100"">快速 (困难)</option>
-
-                    <option value=""60"">极速 (噩梦)</option>
-
-                </select>
-
+        <div id="game-area">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div id="game-over" class="overlay">
+                <h2>游戏结束!</h2>
+                <p>你背到了圆周率后 <span id="final-score">0</span> 位</p>
+                <button id="reset-btn" class="action-btn">再来一次</button>
             </div>
 
-            <div class=""setting-item"">
-
-                <label>画面风格:</label>
-
-                <select id=""theme-select"" onchange=""changeTheme(this.value)"">
-
-                    <option value=""default"">默认经典</option>
-
-                    <option value=""retro"">复古泛黄</option>
-
-                    <option value=""neon"">赛博霓虹</option>
-
-                    <option value=""custom"">自选颜色</option>
-
-                </select>
-
+            <div id="settings-menu" class="overlay">
+                <button id="close-menu-btn" class="close-menu-btn">×</button>
+                <h2>游戏设置</h2>
+                <div class="setting-item">
+                    <label>难度 (速度):</label>
+                    <select id="speed-select">
+                        <option value="200">慢速 (新手)</option>
+                        <option value="150" selected>中速 (普通)</option>
+                        <option value="100">快速 (困难)</option>
+                        <option value="60">极速 (噩梦)</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>画面风格:</label>
+                    <select id="theme-select">
+                        <option value="default">默认经典</option>
+                        <option value="retro">复古泛黄</option>
+                        <option value="neon">赛博霓虹</option>
+                        <option value="custom">自选颜色</option>
+                    </select>
+                </div>
+                <div id="custom-colors">
+                    <div>背景: <input type="color" id="color-bg" value="#34495e"></div>
+                    <div>蛇头: <input type="color" id="color-head" value="#2ecc71"></div>
+                    <div>蛇身: <input type="color" id="color-body" value="#1abc9c"></div>
+                </div>
+                <button id="save-settings-btn" class="action-btn">继续游戏</button>
             </div>
-
-            <div id=""custom-colors"">
-
-                <div>背景: <input type=""color"" id=""color-bg"" value=""#34495e"" onchange=""updateCustomColors()""></div>
-
-                <div>蛇头: <input type=""color"" id=""color-head"" value=""#2ecc71"" onchange=""updateCustomColors()""></div>
-
-                <div>蛇身: <input type=""color"" id=""color-body"" value=""#1abc9c"" onchange=""updateCustomColors()""></div>
-
-            </div>
-
-            <button class=""action-btn"" onclick=""toggleMenu()"">继续游戏</button>
-
         </div>
 
+        <div id="pi-display">3.</div>
+        <div class="instructions">电脑使用方向键 ⬆️⬇️⬅️➡️ 控制<br>手机在此区域內👆 滑动控制方向</div>
     </div>
-
-
-
-    <div id=""pi-display"">3.</div>
-
-    <div class=""instructions"">电脑使用方向键 ⬆️⬇️⬅️➡️ 控制<br>手机直接在屏幕上 👆 滑动控制方向</div>
-
-
 
     <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreEl = document.getElementById("score");
+        const targetDigitEl = document.getElementById("target-digit");
+        const piDisplayEl = document.getElementById("pi-display");
+        const gameOverScreen = document.getElementById("game-over");
+        const finalScoreEl = document.getElementById("final-score");
+        const settingsMenu = document.getElementById("settings-menu");
 
-        const canvas = document.getElementById(""gameCanvas"");
+        // The Pi Digits (approx 200+)
+        const PI_DIGITS = "14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196";
 
-        const ctx = canvas.getContext(""2d"");
+        // Game Grid Constants (Fixed logical resolution, display will scale)
+        const LOGICAL_GRID_SIZE = 20; 
+        const LOGICAL_SIZE = 500; // The internal coordinate system is always 500x500
+        const TILE_SIZE = LOGICAL_SIZE / LOGICAL_GRID_SIZE;
 
-        const scoreEl = document.getElementById(""score"");
-
-        const targetDigitEl = document.getElementById(""target-digit"");
-
-        const piDisplayEl = document.getElementById(""pi-display"");
-
-        const gameOverScreen = document.getElementById(""game-over"");
-
-        const settingsMenu = document.getElementById(""settings-menu"");
-
-
-
-        // 圆周率
-
-        const PI_DIGITS = ""14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196"";
-
-
-
-        // 响应式画布尺寸计算
-
-        const maxCanvasSize = 500;
-
-        let canvasSize = Math.min(window.innerWidth - 20, maxCanvasSize);
-
-        canvas.width = canvasSize;
-
-        canvas.height = canvasSize;
-
-
-
-        const GRID_SIZE = 20; // 屏幕固定为20x20个格子
-
-        const TILE_SIZE = canvasSize / GRID_SIZE;
-
-
-
-        let snake, chars, dx, dy, food, piIndex, gameOver, gameLoop, isPaused = false;
-
+        // Game State Variables
+        let snake, chars, dx, dy, food, piIndex, gameOver, gameLoop, isPaused = true;
         let currentSpeed = 150;
-
         
-
-        // 主题配置
-
-        let activeTheme = ""default"";
-
+        // Theme Configurations
+        let activeTheme = "default";
         const themes = {
-
-            default: { bg: ""#34495e"", head: ""#2ecc71"", body: ""#1abc9c"", food: ""#e74c3c"", glow: false },
-
-            retro:   { bg: ""#d7ccc8"", head: ""#5d4037"", body: ""#795548"", food: ""#d84315"", glow: false },
-
-            neon:    { bg: ""#000000"", head: ""#00ffff"", body: ""#ff00ff"", food: ""#39ff14"", glow: true },
-
-            custom:  { bg: ""#34495e"", head: ""#2ecc71"", body: ""#1abc9c"", food: ""#e74c3c"", glow: false }
-
+            default: { bg: "#34495e", head: "#2ecc71", body: "#1abc9c", food: "#e74c3c", glow: false },
+            retro:   { bg: "#d7ccc8", head: "#5d4037", body: "#795548", food: "#d84315", glow: false },
+            neon:    { bg: "#000000", head: "#00ffff", body: "#ff00ff", food: "#39ff14", glow: true },
+            custom:  { bg: "#34495e", head: "#2ecc71", body: "#1abc9c", food: "#e74c3c", glow: false }
         };
 
+        // --- Core Functions ---
 
+        function init() {
+            // Set up fixed logical dimensions for the canvas context
+            canvas.width = LOGICAL_SIZE;
+            canvas.height = LOGICAL_SIZE;
+            
+            // Call resize once on start and listen to window resize
+            resizeGame();
+            window.addEventListener('resize', resizeGame);
+            
+            // Set up button event listeners (more reliable than inline onclick)
+            document.getElementById("menu-btn").addEventListener("click", toggleMenu);
+            document.getElementById("close-menu-btn").addEventListener("click", toggleMenu);
+            document.getElementById("save-settings-btn").addEventListener("click", toggleMenu);
+            document.getElementById("reset-btn").addEventListener("click", resetGame);
+            document.getElementById("speed-select").addEventListener("change", (e) => changeSpeed(e.target.value));
+            document.getElementById("theme-select").addEventListener("change", (e) => changeTheme(e.target.value));
+            
+            // Custom Color Listeners
+            document.getElementById("color-bg").addEventListener("change", updateCustomColors);
+            document.getElementById("color-head").addEventListener("change", updateCustomColors);
+            document.getElementById("color-body").addEventListener("change", updateCustomColors);
+
+            resetGame(); // Start the initial game state
+        }
+
+        // --- Mobile Adaptation (Dynamic Layout & Control Isolation) ---
+
+        function resizeGame() {
+            const wrapper = document.getElementById("game-wrapper");
+            const topBarHeight = document.getElementById("top-bar").offsetHeight;
+            const uiPanelHeight = document.getElementById("ui-panel").offsetHeight;
+            const piDisplayHeight = document.getElementById("pi-display").offsetHeight;
+            const instructionsHeight = document.querySelector(".instructions").offsetHeight;
+            const availableHeight = window.innerHeight - topBarHeight - uiPanelHeight - piDisplayHeight - instructionsHeight - 50;
+            const availableWidth = window.innerWidth - 30; // some margin
+            
+            const minDim = Math.min(Math.min(availableWidth, availableHeight), LOGICAL_SIZE);
+            
+            // Visually scale the canvas, but keep its internal resolution fixed
+            canvas.style.width = minDim + "px";
+            canvas.style.height = minDim + "px";
+        }
+
+        // --- Game Logic ---
 
         function resetGame() {
-
-            snake = [{x: Math.floor(GRID_SIZE/2), y: Math.floor(GRID_SIZE/2)}]; 
-
-            chars = [""3.""];
-
-            dx = 0; dy = 0; piIndex = 0; gameOver = false;
-
-            gameOverScreen.style.display = ""none"";
-
+            snake = [{x: Math.floor(LOGICAL_GRID_SIZE/2), y: Math.floor(LOGICAL_GRID_SIZE/2)}]; 
+            chars = ["3."];
+            dx = 0; dy = 0; piIndex = 0; 
+            gameOver = false;
+            isPaused = false;
+            gameOverScreen.classList.remove("visible");
+            settingsMenu.classList.remove("visible");
             
-
             spawnFood();
-
             updateUI();
-
             
-
             if(gameLoop) clearInterval(gameLoop);
-
             gameLoop = setInterval(update, currentSpeed);
-
         }
-
-
 
         function spawnFood() {
-
             let valid = false;
-
             while (!valid) {
-
-                food = { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) };
-
+                food = { x: Math.floor(Math.random() * LOGICAL_GRID_SIZE), y: Math.floor(Math.random() * LOGICAL_GRID_SIZE) };
                 valid = true;
-
                 for (let segment of snake) {
-
                     if (segment.x === food.x && segment.y === food.y) { valid = false; break; }
-
                 }
-
             }
-
         }
-
-
 
         function updateUI() {
-
             scoreEl.innerText = chars.length;
-
             targetDigitEl.innerText = PI_DIGITS[piIndex];
-
-            piDisplayEl.innerText = chars.join("""");
-
+            piDisplayEl.innerText = chars.join("");
         }
 
-
-
         function update() {
-
             if (gameOver || isPaused || (dx === 0 && dy === 0)) return;
-
-
 
             const newHead = {x: snake[0].x + dx, y: snake[0].y + dy};
 
-
-
-            // 撞墙
-
-            if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
-
+            // Wall Collision
+            if (newHead.x < 0 || newHead.x >= LOGICAL_GRID_SIZE || newHead.y < 0 || newHead.y >= LOGICAL_GRID_SIZE) {
                 endGame(); return;
-
             }
-
-            // 撞自己
-
+            // Self Collision
             for (let segment of snake) {
-
                 if (newHead.x === segment.x && newHead.y === segment.y) {
-
                     endGame(); return;
-
                 }
-
             }
-
-
 
             snake.unshift(newHead);
 
-
-
-            // 吃食物
-
+            // Eat Food
             if (newHead.x === food.x && newHead.y === food.y) {
-
                 chars.push(PI_DIGITS[piIndex]); 
-
                 piIndex++;
-
                 spawnFood();
-
                 updateUI();
-
             } else {
-
                 snake.pop(); 
-
             }
-
             draw();
-
         }
-
-
 
         function draw() {
-
             let t = themes[activeTheme];
 
-
-
-            // 画背景
-
+            // Clear Background
             ctx.fillStyle = t.bg;
+            ctx.fillRect(0, 0, LOGICAL_SIZE, LOGICAL_SIZE);
 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Setting Neon Glow
+            ctx.shadowBlur = t.glow ? 15 : 0;
+            canvas.style.boxShadow = t.glow ? "0 0 20px #0ff, 0 0 40px #f0f" : "0 10px 20px rgba(0,0,0,0.3)";
 
-
-
-            // 设置发光效果 (霓虹主题)
-
-            if(t.glow) {
-
-                ctx.shadowBlur = 15;
-
-                canvas.style.boxShadow = ""0 0 20px #0ff, 0 0 40px #f0f"";
-
-            } else {
-
-                ctx.shadowBlur = 0;
-
-                canvas.style.boxShadow = ""0 10px 20px rgba(0,0,0,0.3)"";
-
-            }
-
-
-
-            // 画食物
-
+            // Draw Food
             ctx.shadowColor = t.food;
-
             ctx.fillStyle = t.food;
-
-            ctx.font = ""bold "" + (TILE_SIZE * 0.8) + ""px Arial"";
-
-            ctx.textAlign = ""center"";
-
-            ctx.textBaseline = ""middle"";
-
+            ctx.font = "bold " + (TILE_SIZE * 0.8) + "px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
             ctx.fillText(PI_DIGITS[piIndex], food.x * TILE_SIZE + TILE_SIZE/2, food.y * TILE_SIZE + TILE_SIZE/2);
 
-
-
-            // 画蛇
-
+            // Draw Snake (Head and Body)
             for (let i = 0; i < snake.length; i++) {
-
                 ctx.fillStyle = i === 0 ? t.head : t.body;
-
-                ctx.shadowColor = ctx.fillStyle;
-
+                ctx.shadowColor = ctx.fillStyle; // glow matches color
                 ctx.fillText(chars[i], snake[i].x * TILE_SIZE + TILE_SIZE/2, snake[i].y * TILE_SIZE + TILE_SIZE/2);
-
             }
-
         }
-
-
 
         function endGame() {
-
             gameOver = true;
-
-            gameOverScreen.style.display = ""flex"";
-
-            document.getElementById(""final-score"").innerText = piIndex;
-
+            isPaused = true;
+            gameOverScreen.classList.add("visible");
+            finalScoreEl.innerText = piIndex;
         }
 
-
-
-        // ============ 菜单与设置 ============
-
+        // ============ Menu & Settings ============
         function toggleMenu() {
-
+            if(gameOver) return; // Can't open menu when game over
             isPaused = !isPaused;
-
-            settingsMenu.style.display = isPaused ? ""flex"" : ""none"";
-
+            if(isPaused) settingsMenu.classList.add("visible");
+            else settingsMenu.classList.remove("visible");
         }
-
-
 
         function changeSpeed(speed) {
-
             currentSpeed = parseInt(speed);
-
-            if(!gameOver) {
-
+            if(!gameOver && !isPaused) {
                 clearInterval(gameLoop);
-
                 gameLoop = setInterval(update, currentSpeed);
-
             }
-
         }
-
-
 
         function changeTheme(themeName) {
-
             activeTheme = themeName;
-
-            document.getElementById(""custom-colors"").style.display = (themeName === 'custom') ? 'flex' : 'none';
-
+            document.getElementById("custom-colors").style.display = (themeName === 'custom') ? 'flex' : 'none';
             
-
-            // 修改网页整体背景配色
-
+            // Adjust dynamic theme color updates for the overall web page
+            const root = document.documentElement;
             if(themeName === 'retro') {
-
-                document.documentElement.style.setProperty('--bg-color', '#8d6e63');
-
-                document.documentElement.style.setProperty('--text-color', '#efebe9');
-
+                root.style.setProperty('--bg-color', '#8d6e63');
+                root.style.setProperty('--text-color', '#efebe9');
+                root.style.setProperty('--accent-color', '#fdd835');
+                root.style.setProperty('--border-color', '#795548');
             } else if(themeName === 'neon') {
-
-                document.documentElement.style.setProperty('--bg-color', '#111');
-
-                document.documentElement.style.setProperty('--text-color', '#0ff');
-
+                root.style.setProperty('--bg-color', '#111');
+                root.style.setProperty('--text-color', '#0ff');
+                root.style.setProperty('--accent-color', '#ff00ff');
+                root.style.setProperty('--border-color', '#f0f');
             } else {
-
-                document.documentElement.style.setProperty('--bg-color', '#2c3e50');
-
-                document.documentElement.style.setProperty('--text-color', '#ecf0f1');
-
+                root.style.setProperty('--bg-color', '#2c3e50');
+                root.style.setProperty('--text-color', '#ecf0f1');
+                root.style.setProperty('--accent-color', '#f1c40f');
+                root.style.setProperty('--border-color', '#bdc3c7');
             }
-
             draw();
-
         }
-
-
 
         function updateCustomColors() {
-
-            themes.custom.bg = document.getElementById(""color-bg"").value;
-
-            themes.custom.head = document.getElementById(""color-head"").value;
-
-            themes.custom.body = document.getElementById(""color-body"").value;
-
+            themes.custom.bg = document.getElementById("color-bg").value;
+            themes.custom.head = document.getElementById("color-head").value;
+            themes.custom.body = document.getElementById("color-body").value;
             draw();
-
         }
 
-
-
-        // ============ 控制逻辑 (键盘 + 触摸滑动) ============
-
+        // ============ Controls (Desktop Keyboard + Isolated Mobile Swipes) ============
         
-
-        // 键盘控制
-
-        document.addEventListener(""keydown"", e => {
-
-            if([""ArrowUp"",""ArrowDown"",""ArrowLeft"",""ArrowRight""].includes(e.code)) e.preventDefault();
-
+        // --- Keyboard Controls (Desktop) ---
+        document.addEventListener("keydown", e => {
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code)) e.preventDefault(); // prevent scroll
+            if (gameOver || isPaused) return; // Block input when paused
+            
             if (e.key === 'ArrowUp' && dy === 0) { dx = 0; dy = -1; }
-
             if (e.key === 'ArrowDown' && dy === 0) { dx = 0; dy = 1; }
-
             if (e.key === 'ArrowLeft' && dx === 0) { dx = -1; dy = 0; }
-
             if (e.key === 'ArrowRight' && dx === 0) { dx = 1; dy = 0; }
-
         });
 
-
-
-        // 移动端滑动 (Swipe) 控制
-
+        // --- Swipe Controls (Mobile) ---
+        // Isolated Strictly to the Canvas for better reliability
         let touchStartX = 0, touchStartY = 0;
+        let touchEndX = 0, touchEndY = 0;
 
         canvas.addEventListener('touchstart', function(e) {
-
-            e.preventDefault(); // 防止双击放大和滚动
-
+            if(gameOver || isPaused) return; 
             touchStartX = e.changedTouches[0].screenX;
-
             touchStartY = e.changedTouches[0].screenY;
-
-        }, { passive: false });
-
-
+        }, { passive: true });
 
         canvas.addEventListener('touchend', function(e) {
+            if(gameOver || isPaused) return; 
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleSwipe();
+        }, { passive: true });
 
-            e.preventDefault();
-
-            let touchEndX = e.changedTouches[0].screenX;
-
-            let touchEndY = e.changedTouches[0].screenY;
-
-            handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
-
+        // TouchMove can be used for preventDefault but isn't required if touch-action: none is used
+        canvas.addEventListener('touchmove', function(e) {
+             if (!isPaused && !gameOver) {
+                 e.preventDefault(); // Specifically block page scrolling *while* playing
+             }
         }, { passive: false });
 
-
-
-        function handleSwipe(startX, startY, endX, endY) {
-
-            let diffX = endX - startX;
-
-            let diffY = endY - startY;
-
-            // 设定滑动最小阈值，防止误触
-
+        function handleSwipe() {
+            let diffX = touchEndX - touchStartX;
+            let diffY = touchEndY - touchStartY;
+            // Min threshold to count as a deliberate swipe
             if (Math.abs(diffX) < 20 && Math.abs(diffY) < 20) return;
 
-
-
             if (Math.abs(diffX) > Math.abs(diffY)) {
-
-                // 水平滑动
-
-                if (diffX > 0 && dx === 0) { dx = 1; dy = 0; } // 右
-
-                else if (diffX < 0 && dx === 0) { dx = -1; dy = 0; } // 左
-
+                // Horizontal swipe
+                if (diffX > 0 && dx === 0) { dx = 1; dy = 0; } // Right
+                else if (diffX < 0 && dx === 0) { dx = -1; dy = 0; } // Left
             } else {
-
-                // 垂直滑动
-
-                if (diffY > 0 && dy === 0) { dx = 0; dy = 1; } // 下
-
-                else if (diffY < 0 && dy === 0) { dx = 0; dy = -1; } // 上
-
+                // Vertical swipe
+                if (diffY > 0 && dy === 0) { dx = 0; dy = 1; } // Down
+                else if (diffY < 0 && dy === 0) { dx = 0; dy = -1; } // Up
             }
-
         }
 
-
-
-        resetGame();
-
+        // --- Start ---
+        init();
         draw();
-
     </script>
-
 </body>
-
-</html>"
+</html>
