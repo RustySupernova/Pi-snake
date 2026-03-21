@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>圆周率贪吃蛇 v4.0 - 霓虹炫波版</title>
+    <title>圆周率贪吃蛇 v5.0 - 硬核挑战版</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Pixelify+Sans&family=Silkscreen&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -18,10 +18,8 @@
         * { box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: var(--main-font);
-            margin: 0; padding: 0;
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: var(--main-font); margin: 0; padding: 0;
             display: flex; flex-direction: column; align-items: center;
             min-height: 100vh; overflow: hidden; transition: background-color 0.5s;
         }
@@ -38,80 +36,88 @@
         #game-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 10px; }
 
         #game-area { position: relative; border-radius: 12px; border: 4px solid var(--border-color); overflow: hidden; background: #000; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-
         canvas { display: block; touch-action: none; }
 
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column;
             justify-content: center; align-items: center; z-index: 40; color: white; padding: 20px;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px); text-align: center;
         }
 
         #settings-menu.visible, #game-over.visible { display: flex; }
 
         .setting-item { margin: 12px 0; display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 320px; }
         label { font-weight: bold; font-size: 14px; opacity: 0.9; }
-        select { padding: 8px; font-size: 14px; border-radius: 6px; width: 180px; background: #2c3e50; color: white; border: 1px solid #444; }
+        select, input[type="range"] { padding: 6px; font-size: 14px; border-radius: 6px; width: 160px; background: #2c3e50; color: white; border: 1px solid #444; }
         
         button.action-btn { padding: 12px 24px; background: #2ecc71; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px; font-size: 16px; transition: background 0.2s; }
         button.action-btn:hover { background: #27ae60; }
 
         #pi-display { margin-top: 15px; font-size: 16px; color: var(--accent-color); text-align: center; max-width: 500px; word-break: break-all; font-family: 'Courier New', monospace; letter-spacing: 1px; opacity: 0.8; }
         #target-digit-container { margin-bottom: 15px; font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        
+        .punish-text { color: #e74c3c; font-size: 14px; font-weight: normal; margin-left: 10px; opacity: 0; transition: opacity 0.3s; }
+        .show-punish { opacity: 1; }
     </style>
 </head>
 <body>
 
     <div id="top-bar">
-        <h1 style="font-size:18px; margin:0; letter-spacing:1px;">π SNAKE <span style="font-size:12px; opacity:0.5;">v4.0</span></h1>
+        <h1 style="font-size:18px; margin:0; letter-spacing:1px;">π SNAKE <span style="font-size:12px; opacity:0.5;">v5.0</span></h1>
         <button id="menu-btn">⚙️</button>
     </div>
 
     <div id="game-wrapper">
         <div id="target-digit-container">
             寻找数字: <span id="target-digit" style="color:#e74c3c; font-size: 32px; font-family: 'Press Start 2P', cursive;">1</span>
+            <span id="punish-msg" class="punish-text">-1 惩罚!</span>
         </div>
         
         <div id="game-area">
             <canvas id="gameCanvas"></canvas>
             
             <div id="game-over" class="overlay">
-                <h2 style="font-size:36px; color:#e74c3c;">Game Over</h2>
-                <p style="font-size:18px;">You have reached<span id="final-score" style="font-weight:bold; color:#f1c40f;">0</span> of π</p>
-                <button id="reset-btn" class="action-btn">Restart</button>
+                <h2 style="font-size:36px; color:#e74c3c;">游戏结束</h2>
+                <p style="font-size:18px;">你背到了 π 的后 <span id="final-score" style="font-weight:bold; color:#f1c40f;">0</span> 位</p>
+                <button id="reset-btn" class="action-btn">再来一次</button>
             </div>
 
             <div id="settings-menu" class="overlay">
-                <h2 style="margin-top:0; font-size:28px;">Settings</h2>
+                <h2 style="margin-top:0; font-size:28px;">游戏设置</h2>
                 
                 <div class="setting-item">
-                    <label>Styles:</label>
+                    <label>移动速度 (1-10):</label>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="range" id="speed-slider" min="1" max="10" value="5" style="width:120px;">
+                        <span id="speed-val" style="width:20px; text-align:right;">5</span>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <label>游戏难度:</label>
+                    <select id="diff-select">
+                        <option value="1">初级 (固定单个)</option>
+                        <option value="2">中级 (限时掉落)</option>
+                        <option value="3" selected>高级 (干扰数字)</option>
+                    </select>
+                </div>
+
+                <div class="setting-item">
+                    <label>画面风格:</label>
                     <select id="theme-select">
-                        <option value="neon" selected>Neon</option>
-                        <option value="retro">Retro</option>
-                        <option value="default">Default</option>
+                        <option value="neon" selected>动态霓虹 (炫波)</option>
+                        <option value="retro">复古像素 (黑白)</option>
+                        <option value="default">默认经典</option>
                     </select>
                 </div>
 
                 <div class="setting-item">
-                    <label>Font:</label>
+                    <label>数字字体:</label>
                     <select id="font-select">
-                        <option value="'Press Start 2P'">Press Start</option>
-                        <option value="'VT323'">VT323</option>
-                        <option value="'Silkscreen'">Silkscreen</option>
-                        <option value="'Pixelify Sans'">Pixelify</option>
-                        <option value="Arial">Arial</option>
-                        <option value="'Comic Sans MS'">Comic Sans</option>
-                    </select>
-                </div>
-
-                <div class="setting-item">
-                    <label>Speed:</label>
-                    <select id="speed-select">
-                        <option value="150" selected>Slow</option>
-                        <option value="100">Mid</option>
-                        <option value="60">Fast</option>
+                        <option value="'Press Start 2P'">像素: Press Start</option>
+                        <option value="'VT323'">像素: VT323</option>
+                        <option value="Arial">无衬线: Arial</option>
                     </select>
                 </div>
 
@@ -129,6 +135,7 @@
         const gameOverScreen = document.getElementById("game-over");
         const settingsMenu = document.getElementById("settings-menu");
         const finalScoreEl = document.getElementById("final-score");
+        const punishMsg = document.getElementById("punish-msg");
 
         const PI_DIGITS = "14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196";
 
@@ -136,16 +143,25 @@
         const SIZE = 500; 
         const TILE = SIZE / GRID;
 
-        let snake, chars, dx, dy, food, piIndex, gameOver, gameLoop;
-        let isPaused = false;
+        let snake, chars, dx, dy, piIndex, gameOver, isPaused = false;
+        
+        // 游戏核心时间与速度
+        let gameTime = 0;
+        let lastRealTime = 0;
+        let physicsAccumulator = 0;
+        let currentSpeedMs = 140; // 默认速度
+        let difficulty = 3; 
+        
+        let foods = []; 
+        let pendingSpawns = []; // 待复活的数字 {time, isCorrect}
+
         let currentFont = "'Press Start 2P'"; 
         let activeTheme = "neon";
-        let neonHue = 0; // 全局色相时间
+        let neonHue = 0; 
 
         const themes = {
             default: { bg: "#34495e", head: "#2ecc71", body: "#1abc9c", food: "#e74c3c", glow: false, wave: false },
             retro:   { bg: "#1a1a1a", head: "#ffffff", body: "#555555", food: "#ff0000", glow: false, wave: false },
-            // 霓虹模式开启 wave 属性
             neon:    { bg: "#000000", head: "#ffffff", body: "#ffffff", food: "#39ff14", glow: true, wave: true }
         };
 
@@ -153,14 +169,26 @@
             canvas.width = SIZE; canvas.height = SIZE;
             resize();
             window.addEventListener('resize', resize);
+            
+            // 绑定事件
             document.getElementById("menu-btn").onclick = toggleSettings;
             document.getElementById("save-settings-btn").onclick = toggleSettings;
             document.getElementById("reset-btn").onclick = resetGame;
-            document.getElementById("font-select").onchange = (e) => currentFont = e.target.value;
-            document.getElementById("theme-select").onchange = (e) => activeTheme = e.target.value;
+            document.getElementById("font-select").onchange = e => currentFont = e.target.value;
+            document.getElementById("theme-select").onchange = e => activeTheme = e.target.value;
+            document.getElementById("diff-select").onchange = e => { difficulty = parseInt(e.target.value); resetGame(); };
+            
+            const speedSlider = document.getElementById("speed-slider");
+            const speedVal = document.getElementById("speed-val");
+            speedSlider.oninput = e => {
+                let val = parseInt(e.target.value);
+                speedVal.innerText = val;
+                // 滑块1=260ms (慢), 5=140ms, 10=50ms (极快) -> 公式: 290 - (val * 24)
+                currentSpeedMs = 290 - (val * 24); 
+            };
             
             resetGame();
-            requestAnimationFrame(drawLoop); // 启动 60FPS 渲染循环
+            requestAnimationFrame(gameLoop); 
         }
 
         function resize() {
@@ -170,17 +198,48 @@
         }
 
         function resetGame() {
-            snake = [{x: 10, y: 10}]; chars = ["3."];
-            dx = 0; dy = 0; piIndex = 0; gameOver = false; isPaused = false;
+            snake = [{x: 10, y: 10}]; 
+            chars = ["3."];
+            dx = 0; dy = 0; piIndex = 0; 
+            gameOver = false; isPaused = false;
             gameOverScreen.classList.remove("visible");
-            spawnFood();
-            if(gameLoop) clearInterval(gameLoop);
-            gameLoop = setInterval(updatePhysics, 150);
+            
+            foods = [];
+            pendingSpawns = [];
+            spawnFood(true); // 始终生成1个正确的
+            if (difficulty === 3) {
+                spawnFood(false); // 高级难度额外生成2个错误干扰项
+                spawnFood(false);
+            }
             updateUI();
         }
 
-        function spawnFood() {
-            food = { x: Math.floor(Math.random()*GRID), y: Math.floor(Math.random()*GRID) };
+        // 生成食物：isCorrect 决定生成正确的下一位圆周率，还是随机错误数字
+        function spawnFood(isCorrect) {
+            let attempts = 0;
+            let valid = false;
+            let newFood = {};
+            while (!valid && attempts < 100) {
+                newFood.x = Math.floor(Math.random() * GRID);
+                newFood.y = Math.floor(Math.random() * GRID);
+                valid = true;
+                for (let s of snake) if (s.x === newFood.x && s.y === newFood.y) valid = false;
+                for (let f of foods) if (f.x === newFood.x && f.y === newFood.y) valid = false;
+                attempts++;
+            }
+            
+            if (isCorrect) {
+                newFood.value = PI_DIGITS[piIndex];
+            } else {
+                let wrongDigit;
+                do { wrongDigit = Math.floor(Math.random() * 10).toString(); } 
+                while (wrongDigit === PI_DIGITS[piIndex]);
+                newFood.value = wrongDigit;
+            }
+            
+            newFood.isCorrect = isCorrect;
+            newFood.spawnTime = gameTime;
+            foods.push(newFood);
         }
 
         function updateUI() {
@@ -188,59 +247,135 @@
             piDisplayEl.innerText = chars.join("");
         }
 
+        function showPunishment() {
+            punishMsg.classList.add("show-punish");
+            setTimeout(() => punishMsg.classList.remove("show-punish"), 1000);
+        }
+
+        // 更新游戏物理逻辑
         function updatePhysics() {
             if (gameOver || isPaused || (dx === 0 && dy === 0)) return;
             const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+            
+            // 撞墙或撞自己
             if (head.x<0 || head.x>=GRID || head.y<0 || head.y>=GRID) return endGame();
             for (let s of snake) if (s.x === head.x && s.y === head.y) return endGame();
             
-            snake.unshift(head);
-            if (head.x === food.x && head.y === food.y) {
-                chars.push(PI_DIGITS[piIndex++]);
-                spawnFood();
-                updateUI();
-            } else { snake.pop(); }
+            snake.unshift(head); // 先移动蛇头
+            
+            // 检测是否吃到数字
+            let hitIdx = foods.findIndex(f => f.x === head.x && f.y === head.y);
+            
+            if (hitIdx !== -1) {
+                let hitFood = foods[hitIdx];
+                if (hitFood.isCorrect) {
+                    // 吃对了！长度增加（不pop尾巴）
+                    chars.push(PI_DIGITS[piIndex++]);
+                    // 刷新场上所有数字
+                    foods = []; pendingSpawns = [];
+                    spawnFood(true);
+                    if (difficulty === 3) { spawnFood(false); spawnFood(false); }
+                    updateUI();
+                } else {
+                    // 吃错了！(仅高级难度会出现)
+                    if (chars.length <= 1) {
+                        endGame(); // 仅剩蛇头时吃错直接死亡
+                        return;
+                    } else {
+                        // 惩罚机制：舍弃尾巴
+                        snake.pop(); // 抵消刚才移动带来的长度增加
+                        snake.pop(); // 惩罚性缩短一格
+                        chars.pop(); 
+                        piIndex--;
+                        showPunishment();
+                        
+                        // 因为目标数字变了，必须刷新场上的数字避免逻辑死锁
+                        foods = []; pendingSpawns = [];
+                        spawnFood(true);
+                        if (difficulty === 3) { spawnFood(false); spawnFood(false); }
+                        updateUI();
+                    }
+                }
+            } else {
+                snake.pop(); // 没吃到东西，正常移动，砍掉尾巴保持长度
+            }
         }
 
-        // ============ 核心渲染循环 (60 FPS) ============
-        function drawLoop() {
-            let t = themes[activeTheme];
+        // 处理食物过期与重生
+        function processFoods() {
+            if (difficulty >= 2) {
+                // 倒序遍历处理过期，防数组塌陷
+                for (let i = foods.length - 1; i >= 0; i--) {
+                    if (gameTime - foods[i].spawnTime >= 20000) {
+                        // 食物存在超过20秒 -> 消失，进入5秒复活倒计时
+                        pendingSpawns.push({ time: gameTime + 5000, isCorrect: foods[i].isCorrect });
+                        foods.splice(i, 1);
+                    }
+                }
+                // 处理待复活队列
+                for (let i = pendingSpawns.length - 1; i >= 0; i--) {
+                    if (gameTime >= pendingSpawns[i].time) {
+                        spawnFood(pendingSpawns[i].isCorrect);
+                        pendingSpawns.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        // ============ 核心渲染循环 ============
+        function gameLoop(timestamp) {
+            if (!lastRealTime) lastRealTime = timestamp;
+            let dt = timestamp - lastRealTime;
+            lastRealTime = timestamp;
+
+            // 如果游戏没有暂停，则累加时间并计算物理帧
+            if (!isPaused && !gameOver) {
+                gameTime += dt;
+                physicsAccumulator += dt;
+                // 滑动条实时改变速度，立刻反映在这里
+                while (physicsAccumulator >= currentSpeedMs) {
+                    updatePhysics();
+                    processFoods();
+                    physicsAccumulator -= currentSpeedMs;
+                }
+            }
             
-            // 1. 全局时间递增
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function draw() {
+            let t = themes[activeTheme];
             neonHue = (neonHue + 4) % 360; 
 
-            // 2. 绘制背景
             ctx.fillStyle = t.bg;
             ctx.fillRect(0, 0, SIZE, SIZE);
 
-            // 3. 设置基础字体样式
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
             let fontSize = (currentFont.includes('Press Start')) ? TILE * 0.6 : TILE * 0.8;
             ctx.font = "bold " + fontSize + "px " + currentFont;
 
-            // 4. 绘制食物
-            ctx.shadowBlur = t.glow ? 20 : 0;
-            ctx.shadowColor = t.food;
-            ctx.fillStyle = t.food;
-            ctx.fillText(PI_DIGITS[piIndex], food.x * TILE + TILE/2, food.y * TILE + TILE/2);
+            // 绘制场上的所有数字(食物)
+            foods.forEach(f => {
+                let age = gameTime - f.spawnTime;
+                // 难度 >= 2 时，15秒后开始闪烁 (周期200ms)
+                if (difficulty >= 2 && age > 15000) {
+                    if (Math.floor(age / 200) % 2 !== 0) return; // 奇数周期跳过绘制，实现闪烁
+                }
 
-            // 5. 绘制蛇 (核心特效所在)
+                ctx.shadowBlur = t.glow ? 20 : 0;
+                ctx.shadowColor = t.food;
+                ctx.fillStyle = t.food;
+                ctx.fillText(f.value, f.x * TILE + TILE/2, f.y * TILE + TILE/2);
+            });
+
+            // 绘制蛇
             snake.forEach((s, i) => {
-                let cellColor;
-                
+                let cellColor = (i === 0) ? t.head : t.body;
                 if (t.wave) {
-                    // === 炫波特效逻辑 ===
-                    // i 是身体的索引（0是头，1是脖子...）
-                    // 我们给每一节一个色相偏移：neonHue - i * 延迟系数
-                    let hueOffset = 15; // 颜色在相邻数字间传播的延迟量
+                    let hueOffset = 15; 
                     let currentCellHue = (neonHue - i * hueOffset + 360) % 360;
-                    
-                    // 蛇头稍微亮一点，身体保持高饱和度
-                    let lightness = (i === 0) ? '70%' : '55%';
-                    cellColor = `hsl(${currentCellHue}, 100%, ${lightness})`;
-                } else {
-                    // 经典逻辑
-                    cellColor = (i === 0) ? t.head : t.body;
+                    cellColor = `hsl(${currentCellHue}, 100%, ${i===0 ? '70%' : '55%'})`;
                 }
 
                 ctx.shadowBlur = t.glow ? 15 : 0;
@@ -248,9 +383,6 @@
                 ctx.fillStyle = cellColor;
                 ctx.fillText(chars[i], s.x * TILE + TILE/2, s.y * TILE + TILE/2);
             });
-
-            // 6. 循环调用
-            requestAnimationFrame(drawLoop);
         }
 
         function endGame() {
@@ -264,7 +396,7 @@
             settingsMenu.classList.toggle("visible");
         }
 
-        // 控制逻辑
+        // ============ 操控判定 ============
         document.onkeydown = e => {
             if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)) e.preventDefault();
             if (e.key === 'ArrowUp' && dy === 0) { dx = 0; dy = -1; }
