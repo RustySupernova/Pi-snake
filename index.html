@@ -3,515 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>圆周率贪吃蛇 v3.0 - 终极视觉版</title>
+    <title>圆周率贪吃蛇 v4.0 - 霓虹炫波版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Pixelify+Sans&family=Silkscreen&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #2c3e50;
+            --bg-color: #1a1a1a;
             --text-color: #ecf0f1;
             --accent-color: #f1c40f;
-            --main-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            --ui-bg: rgba(255, 255, 255, 0.1);
-            --border-color: #bdc3c7;
+            --main-font: 'Segoe UI', sans-serif;
+            --ui-bg: rgba(255, 255, 255, 0.05);
+            --border-color: #444;
         }
 
-        * {
-            box-sizing: border-box;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
+        * { box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
             font-family: var(--main-font);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            overflow: hidden;
-            transition: background-color 0.5s;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; overflow: hidden; transition: background-color 0.5s;
         }
 
         #top-bar {
-            width: 100%;
-            height: 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 15px;
-            background: var(--ui-bg);
-            border-bottom: 2px solid var(--border-color);
-            z-index: 50;
+            width: 100%; height: 50px; display: flex; justify-content: space-between;
+            align-items: center; padding: 0 15px; background: var(--ui-bg);
+            border-bottom: 2px solid var(--border-color); z-index: 50;
         }
 
-        h1 { margin: 0; font-size: 20px; }
-        #menu-btn {
-            background: none; border: none;
-            color: var(--text-color);
-            font-size: 24px; cursor: pointer;
-            padding: 5px 10px;
-            transition: transform 0.2s;
-        }
-        #menu-btn:hover { transform: rotate(90deg); }
+        #menu-btn { background: none; border: none; color: var(--text-color); font-size: 24px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; }
+        #menu-btn:hover { opacity: 1; }
 
-        #game-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 10px;
-            z-index: 10;
-        }
+        #game-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 10px; }
 
-        #ui-panel {
-            width: 100%;
-            max-width: 500px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            font-size: 16px;
-            font-weight: bold;
-        }
+        #game-area { position: relative; border-radius: 12px; border: 4px solid var(--border-color); overflow: hidden; background: #000; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
 
-        #game-area {
-            position: relative;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-            border-radius: 8px;
-            border: 4px solid var(--border-color);
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        canvas {
-            background-color: #34495e;
-            display: block;
-            touch-action: none;
-        }
-
-        #pi-display {
-            width: 100%;
-            max-width: 500px;
-            height: 60px;
-            margin-top: 15px;
-            font-size: 18px;
-            letter-spacing: 2px;
-            text-align: center;
-            word-wrap: break-word;
-            overflow-y: auto;
-            color: var(--accent-color);
-            padding: 0 10px;
-        }
+        canvas { display: block; touch-action: none; }
 
         .overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 40;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            backdrop-filter: blur(3px);
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 40; color: white; padding: 20px;
+            backdrop-filter: blur(5px);
         }
 
         #settings-menu.visible, #game-over.visible { display: flex; }
 
-        #game-over h2 { color: #e74c3c; font-size: 32px; margin-bottom: 10px; }
+        .setting-item { margin: 12px 0; display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 320px; }
+        label { font-weight: bold; font-size: 14px; opacity: 0.9; }
+        select { padding: 8px; font-size: 14px; border-radius: 6px; width: 180px; background: #2c3e50; color: white; border: 1px solid #444; }
         
-        button.action-btn {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #2ecc71;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin-top: 15px;
-            font-weight: bold;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        button.action-btn:active { transform: translateY(2px); box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        button.action-btn { padding: 12px 24px; background: #2ecc71; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px; font-size: 16px; transition: background 0.2s; }
+        button.action-btn:hover { background: #27ae60; }
 
-        .instructions { font-size: 14px; opacity: 0.8; margin-top: 10px; line-height: 1.4; text-align: center;}
-
-        /* Settings CSS */
-        .setting-item { margin: 12px 0; display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 260px; }
-        select, input[type="color"] { padding: 6px; font-size: 15px; border-radius: 4px; border: 1px solid #7f8c8d; width: 140px;}
-        #custom-colors { display: none; flex-direction: column; gap: 8px; margin-top: 5px; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; width: 100%; max-width: 260px;}
+        #pi-display { margin-top: 15px; font-size: 16px; color: var(--accent-color); text-align: center; max-width: 500px; word-break: break-all; font-family: 'Courier New', monospace; letter-spacing: 1px; opacity: 0.8; }
+        #target-digit-container { margin-bottom: 15px; font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
 
     <div id="top-bar">
-        <h1>π 贪吃蛇 v3.0</h1>
-        <button id="menu-btn" title="设置">⚙️</button>
+        <h1 style="font-size:18px; margin:0; letter-spacing:1px;">π SNAKE <span style="font-size:12px; opacity:0.5;">v4.0</span></h1>
+        <button id="menu-btn">⚙️</button>
     </div>
 
     <div id="game-wrapper">
-        <div id="ui-panel">
-            <div>长度: <span id="score">1</span></div>
-            <div>找数字: <span id="target-digit" style="color:#e74c3c; font-size: 24px;">1</span></div>
+        <div id="target-digit-container">
+            寻找数字: <span id="target-digit" style="color:#e74c3c; font-size: 32px; font-family: 'Press Start 2P', cursive;">1</span>
         </div>
-
+        
         <div id="game-area">
             <canvas id="gameCanvas"></canvas>
             
             <div id="game-over" class="overlay">
-                <h2>游戏结束!</h2>
-                <p>背到了圆周率后 <span id="final-score">0</span> 位</p>
+                <h2 style="font-size:36px; color:#e74c3c;">游戏结束</h2>
+                <p style="font-size:18px;">你背到了 π 的后 <span id="final-score" style="font-weight:bold; color:#f1c40f;">0</span> 位</p>
                 <button id="reset-btn" class="action-btn">再来一次</button>
             </div>
 
             <div id="settings-menu" class="overlay">
-                <h2 style="margin-top:0;">游戏设置</h2>
+                <h2 style="margin-top:0; font-size:28px;">游戏设置</h2>
                 
-                <div class="setting-item">
-                    <label>难度速度:</label>
-                    <select id="speed-select">
-                        <option value="200">慢速 (新手)</option>
-                        <option value="150" selected>中速 (普通)</option>
-                        <option value="100">快速 (困难)</option>
-                        <option value="60">极速 (噩梦)</option>
-                    </select>
-                </div>
-                
-                <div class="setting-item">
-                    <label>数字字体:</label>
-                    <select id="font-select">
-                        <option value="Arial, sans-serif">无衬线 (Arial)</option>
-                        <option value="'Comic Sans MS', 'Chalkboard SE', cursive">漫画 (Comic Sans)</option>
-                        <option value="Papyrus, fantasy">古卷 (Papyrus)</option>
-                        <option value="'Courier New', Courier, monospace">等宽像素 (Courier)</option>
-                        <option value="'Times New Roman', serif">衬线 (Times)</option>
-                    </select>
-                </div>
-
                 <div class="setting-item">
                     <label>画面风格:</label>
                     <select id="theme-select">
-                        <option value="default">默认经典</option>
-                        <option value="retro">复古像素</option>
-                        <option value="neon">动态霓虹</option>
-                        <option value="custom">自选颜色</option>
+                        <option value="neon" selected>动态霓虹 (炫波)</option>
+                        <option value="retro">复古像素 (黑白)</option>
+                        <option value="default">默认 (经典)</option>
                     </select>
                 </div>
 
-                <div id="custom-colors">
-                    <div style="display:flex; justify-content:space-between;">背景: <input type="color" id="color-bg" value="#34495e"></div>
-                    <div style="display:flex; justify-content:space-between;">蛇头: <input type="color" id="color-head" value="#2ecc71"></div>
-                    <div style="display:flex; justify-content:space-between;">蛇身: <input type="color" id="color-body" value="#1abc9c"></div>
+                <div class="setting-item">
+                    <label>数字字体:</label>
+                    <select id="font-select">
+                        <option value="'Press Start 2P'">像素: Press Start</option>
+                        <option value="'VT323'">像素: VT323</option>
+                        <option value="'Silkscreen'">像素: Silkscreen</option>
+                        <option value="'Pixelify Sans'">像素: Pixelify</option>
+                        <option value="Arial">无衬线: Arial</option>
+                        <option value="'Comic Sans MS'">漫画: Comic Sans</option>
+                    </select>
                 </div>
 
-                <button id="save-settings-btn" class="action-btn">确定</button>
+                <div class="setting-item">
+                    <label>蛇的流速:</label>
+                    <select id="speed-select">
+                        <option value="150" selected>普通</option>
+                        <option value="100">快速</option>
+                        <option value="60">极速</option>
+                    </select>
+                </div>
+
+                <button id="save-settings-btn" class="action-btn">开始/继续</button>
             </div>
         </div>
-
         <div id="pi-display">3.</div>
-        <div class="instructions">电脑使用 ⬆️⬇️⬅️➡️ 控制<br>手机在此区域內👆滑动控制方向</div>
     </div>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-        const scoreEl = document.getElementById("score");
-        const targetDigitEl = document.getElementById("target-digit");
         const piDisplayEl = document.getElementById("pi-display");
+        const targetDigitEl = document.getElementById("target-digit");
         const gameOverScreen = document.getElementById("game-over");
         const settingsMenu = document.getElementById("settings-menu");
+        const finalScoreEl = document.getElementById("final-score");
 
         const PI_DIGITS = "14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196";
 
-        const LOGICAL_GRID_SIZE = 20; 
-        const LOGICAL_SIZE = 500; 
-        const TILE_SIZE = LOGICAL_SIZE / LOGICAL_GRID_SIZE;
+        const GRID = 20; 
+        const SIZE = 500; 
+        const TILE = SIZE / GRID;
 
         let snake, chars, dx, dy, food, piIndex, gameOver, gameLoop;
-        let isPaused = true;
-        let isSettingsOpen = false;
-        let currentSpeed = 150;
-        let currentFont = "Arial, sans-serif";
-        let neonHue = 0; // 霓虹灯动态色相
-        
-        let activeTheme = "default";
+        let isPaused = false;
+        let currentFont = "'Press Start 2P'"; 
+        let activeTheme = "neon";
+        let neonHue = 0; // 全局色相时间
+
         const themes = {
-            default: { bg: "#34495e", head: "#2ecc71", body: "#1abc9c", food: "#e74c3c", glow: false },
-            retro:   { bg: "#795548", head: "#d7ccc8", body: "#a1887f", food: "#ffcc80", glow: false }, // 复古主题配改进
-            neon:    { bg: "#000000", head: "#00ffff", body: "#ff00ff", food: "#39ff14", glow: true },
-            custom:  { bg: "#34495e", head: "#2ecc71", body: "#1abc9c", food: "#e74c3c", glow: false }
+            default: { bg: "#34495e", head: "#2ecc71", body: "#1abc9c", food: "#e74c3c", glow: false, wave: false },
+            retro:   { bg: "#1a1a1a", head: "#ffffff", body: "#555555", food: "#ff0000", glow: false, wave: false },
+            // 霓虹模式开启 wave 属性
+            neon:    { bg: "#000000", head: "#ffffff", body: "#ffffff", food: "#39ff14", glow: true, wave: true }
         };
 
         function init() {
-            canvas.width = LOGICAL_SIZE;
-            canvas.height = LOGICAL_SIZE;
+            canvas.width = SIZE; canvas.height = SIZE;
+            resize();
+            window.addEventListener('resize', resize);
+            document.getElementById("menu-btn").onclick = toggleSettings;
+            document.getElementById("save-settings-btn").onclick = toggleSettings;
+            document.getElementById("reset-btn").onclick = resetGame;
+            document.getElementById("font-select").onchange = (e) => currentFont = e.target.value;
+            document.getElementById("theme-select").onchange = (e) => activeTheme = e.target.value;
             
-            resizeGame();
-            window.addEventListener('resize', resizeGame);
-            
-            document.getElementById("menu-btn").addEventListener("click", toggleSettings);
-            document.getElementById("save-settings-btn").addEventListener("click", toggleSettings);
-            document.getElementById("reset-btn").addEventListener("click", resetGame);
-            document.getElementById("speed-select").addEventListener("change", (e) => changeSpeed(e.target.value));
-            document.getElementById("font-select").addEventListener("change", (e) => currentFont = e.target.value);
-            document.getElementById("theme-select").addEventListener("change", (e) => changeTheme(e.target.value));
-            
-            document.getElementById("color-bg").addEventListener("change", updateCustomColors);
-            document.getElementById("color-head").addEventListener("change", updateCustomColors);
-            document.getElementById("color-body").addEventListener("change", updateCustomColors);
-
-            resetGame(); 
-            requestAnimationFrame(renderLoop); // 启动独立的超平滑渲染引擎
+            resetGame();
+            requestAnimationFrame(drawLoop); // 启动 60FPS 渲染循环
         }
 
-        function resizeGame() {
-            const wrapper = document.getElementById("game-wrapper");
-            const topBarHeight = document.getElementById("top-bar").offsetHeight;
-            const uiPanelHeight = document.getElementById("ui-panel").offsetHeight;
-            const piDisplayHeight = document.getElementById("pi-display").offsetHeight;
-            const availableHeight = window.innerHeight - topBarHeight - uiPanelHeight - piDisplayHeight - 80;
-            const availableWidth = window.innerWidth - 30; 
-            
-            const minDim = Math.min(Math.min(availableWidth, availableHeight), LOGICAL_SIZE);
-            canvas.style.width = minDim + "px";
-            canvas.style.height = minDim + "px";
+        function resize() {
+            let dim = Math.min(window.innerWidth - 40, window.innerHeight - 250, SIZE);
+            canvas.style.width = dim + "px";
+            canvas.style.height = dim + "px";
         }
 
-        // ============ 核心逻辑 (分离物理引擎与渲染引擎) ============
         function resetGame() {
-            snake = [{x: Math.floor(LOGICAL_GRID_SIZE/2), y: Math.floor(LOGICAL_GRID_SIZE/2)}]; 
-            chars = ["3."];
-            dx = 0; dy = 0; piIndex = 0; 
-            gameOver = false;
-            
-            if(!isSettingsOpen) isPaused = false;
+            snake = [{x: 10, y: 10}]; chars = ["3."];
+            dx = 0; dy = 0; piIndex = 0; gameOver = false; isPaused = false;
             gameOverScreen.classList.remove("visible");
-            
             spawnFood();
-            updateUI();
-            
             if(gameLoop) clearInterval(gameLoop);
-            gameLoop = setInterval(updatePhysics, currentSpeed); // 物理逻辑按难度定速
+            gameLoop = setInterval(updatePhysics, 150);
+            updateUI();
         }
 
         function spawnFood() {
-            let valid = false;
-            while (!valid) {
-                food = { x: Math.floor(Math.random() * LOGICAL_GRID_SIZE), y: Math.floor(Math.random() * LOGICAL_GRID_SIZE) };
-                valid = true;
-                for (let segment of snake) {
-                    if (segment.x === food.x && segment.y === food.y) { valid = false; break; }
-                }
-            }
+            food = { x: Math.floor(Math.random()*GRID), y: Math.floor(Math.random()*GRID) };
         }
 
         function updateUI() {
-            scoreEl.innerText = chars.length;
             targetDigitEl.innerText = PI_DIGITS[piIndex];
             piDisplayEl.innerText = chars.join("");
         }
 
         function updatePhysics() {
             if (gameOver || isPaused || (dx === 0 && dy === 0)) return;
-
-            const newHead = {x: snake[0].x + dx, y: snake[0].y + dy};
-
-            if (newHead.x < 0 || newHead.x >= LOGICAL_GRID_SIZE || newHead.y < 0 || newHead.y >= LOGICAL_GRID_SIZE) {
-                endGame(); return;
-            }
-            for (let segment of snake) {
-                if (newHead.x === segment.x && newHead.y === segment.y) {
-                    endGame(); return;
-                }
-            }
-
-            snake.unshift(newHead);
-
-            if (newHead.x === food.x && newHead.y === food.y) {
-                chars.push(PI_DIGITS[piIndex]); 
-                piIndex++;
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+            if (head.x<0 || head.x>=GRID || head.y<0 || head.y>=GRID) return endGame();
+            for (let s of snake) if (s.x === head.x && s.y === head.y) return endGame();
+            
+            snake.unshift(head);
+            if (head.x === food.x && head.y === food.y) {
+                chars.push(PI_DIGITS[piIndex++]);
                 spawnFood();
                 updateUI();
-            } else {
-                snake.pop(); 
-            }
+            } else { snake.pop(); }
         }
 
-        // ============ 独立的高频渲染引擎 ============
-        function renderLoop() {
-            draw();
-            requestAnimationFrame(renderLoop); // 60 FPS 极速刷新，保证动画丝滑
-        }
-
-        function draw() {
+        // ============ 核心渲染循环 (60 FPS) ============
+        function drawLoop() {
             let t = themes[activeTheme];
+            
+            // 1. 全局时间递增
+            neonHue = (neonHue + 4) % 360; 
 
-            // 动态霓虹流光逻辑 (即便在暂停或Game Over时也会一直发光变色)
-            if (activeTheme === 'neon') {
-                neonHue = (neonHue + 1) % 360; // 颜色渐变
-                t.bg = `hsl(${(neonHue / 4) % 360}, 50%, 8%)`; // 背景暗光缓动
-                t.head = `hsl(${neonHue}, 100%, 60%)`;
-                t.body = `hsl(${(neonHue + 40) % 360}, 100%, 50%)`;
-                t.food = `hsl(${(neonHue + 180) % 360}, 100%, 60%)`;
-            }
-
-            // 背景
+            // 2. 绘制背景
             ctx.fillStyle = t.bg;
-            ctx.fillRect(0, 0, LOGICAL_SIZE, LOGICAL_SIZE);
+            ctx.fillRect(0, 0, SIZE, SIZE);
 
-            // 发光阴影
+            // 3. 设置基础字体样式
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            let fontSize = (currentFont.includes('Press Start')) ? TILE * 0.6 : TILE * 0.8;
+            ctx.font = "bold " + fontSize + "px " + currentFont;
+
+            // 4. 绘制食物
             ctx.shadowBlur = t.glow ? 20 : 0;
-            canvas.style.boxShadow = t.glow ? `0 0 15px ${t.head}, 0 0 30px ${t.body}` : "0 10px 20px rgba(0,0,0,0.3)";
-
-            // 处理字体 (复古模式强制像素化)
-            let drawFont = currentFont;
-            if (activeTheme === 'retro') {
-                drawFont = "'Courier New', Courier, monospace"; 
-            }
-            ctx.font = "bold " + (TILE_SIZE * 0.8) + "px " + drawFont;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-
-            // 画食物
-            if (activeTheme === 'retro') {
-                ctx.fillStyle = "rgba(0,0,0,0.3)";
-                ctx.fillRect(food.x * TILE_SIZE + 2, food.y * TILE_SIZE + 2, TILE_SIZE - 4, TILE_SIZE - 4);
-            }
             ctx.shadowColor = t.food;
             ctx.fillStyle = t.food;
-            ctx.fillText(PI_DIGITS[piIndex], food.x * TILE_SIZE + TILE_SIZE/2, food.y * TILE_SIZE + TILE_SIZE/2);
+            ctx.fillText(PI_DIGITS[piIndex], food.x * TILE + TILE/2, food.y * TILE + TILE/2);
 
-            // 画蛇
-            for (let i = 0; i < snake.length; i++) {
-                let sX = snake[i].x * TILE_SIZE;
-                let sY = snake[i].y * TILE_SIZE;
+            // 5. 绘制蛇 (核心特效所在)
+            snake.forEach((s, i) => {
+                let cellColor;
                 
-                ctx.fillStyle = i === 0 ? t.head : t.body;
-
-                // 复古像素模式：绘制方块底座
-                if (activeTheme === 'retro') {
-                    ctx.globalAlpha = 0.4;
-                    ctx.fillRect(sX + 2, sY + 2, TILE_SIZE - 4, TILE_SIZE - 4);
-                    ctx.globalAlpha = 1.0;
+                if (t.wave) {
+                    // === 炫波特效逻辑 ===
+                    // i 是身体的索引（0是头，1是脖子...）
+                    // 我们给每一节一个色相偏移：neonHue - i * 延迟系数
+                    let hueOffset = 15; // 颜色在相邻数字间传播的延迟量
+                    let currentCellHue = (neonHue - i * hueOffset + 360) % 360;
+                    
+                    // 蛇头稍微亮一点，身体保持高饱和度
+                    let lightness = (i === 0) ? '70%' : '55%';
+                    cellColor = `hsl(${currentCellHue}, 100%, ${lightness})`;
+                } else {
+                    // 经典逻辑
+                    cellColor = (i === 0) ? t.head : t.body;
                 }
 
-                ctx.shadowColor = ctx.fillStyle; 
-                ctx.fillText(chars[i], sX + TILE_SIZE/2, sY + TILE_SIZE/2);
-            }
+                ctx.shadowBlur = t.glow ? 15 : 0;
+                ctx.shadowColor = cellColor;
+                ctx.fillStyle = cellColor;
+                ctx.fillText(chars[i], s.x * TILE + TILE/2, s.y * TILE + TILE/2);
+            });
+
+            // 6. 循环调用
+            requestAnimationFrame(drawLoop);
         }
 
         function endGame() {
-            gameOver = true;
-            isPaused = true;
+            gameOver = true; isPaused = true;
             gameOverScreen.classList.add("visible");
-            document.getElementById("final-score").innerText = piIndex;
+            finalScoreEl.innerText = piIndex;
         }
 
-        // ============ 菜单与设置 (随时访问逻辑) ============
         function toggleSettings() {
-            isSettingsOpen = !isSettingsOpen;
-            
-            if (isSettingsOpen) {
-                // 打开设置
-                isPaused = true;
-                settingsMenu.classList.add("visible");
-                gameOverScreen.classList.remove("visible"); // 如果Game over了，暂且隐藏
-            } else {
-                // 关闭设置
-                settingsMenu.classList.remove("visible");
-                if (gameOver) {
-                    // 如果本身处于Game over状态，退回Game over界面
-                    gameOverScreen.classList.add("visible");
-                } else {
-                    // 如果游戏进行中，恢复运行
-                    isPaused = false;
-                }
-            }
+            isPaused = !isPaused;
+            settingsMenu.classList.toggle("visible");
         }
 
-        function changeSpeed(speed) {
-            currentSpeed = parseInt(speed);
-            if(!gameOver && !isPaused) {
-                clearInterval(gameLoop);
-                gameLoop = setInterval(updatePhysics, currentSpeed);
-            }
-        }
-
-        function changeTheme(themeName) {
-            activeTheme = themeName;
-            document.getElementById("custom-colors").style.display = (themeName === 'custom') ? 'flex' : 'none';
-            
-            const root = document.documentElement;
-            if(themeName === 'retro') {
-                root.style.setProperty('--bg-color', '#5d4037');
-                root.style.setProperty('--text-color', '#d7ccc8');
-                root.style.setProperty('--accent-color', '#ffcc80');
-                root.style.setProperty('--border-color', '#3e2723');
-            } else if(themeName === 'neon') {
-                root.style.setProperty('--bg-color', '#0a0a0a');
-                root.style.setProperty('--text-color', '#00ffff');
-                root.style.setProperty('--accent-color', '#ff00ff');
-                root.style.setProperty('--border-color', '#39ff14');
-            } else {
-                root.style.setProperty('--bg-color', '#2c3e50');
-                root.style.setProperty('--text-color', '#ecf0f1');
-                root.style.setProperty('--accent-color', '#f1c40f');
-                root.style.setProperty('--border-color', '#bdc3c7');
-            }
-        }
-
-        function updateCustomColors() {
-            themes.custom.bg = document.getElementById("color-bg").value;
-            themes.custom.head = document.getElementById("color-head").value;
-            themes.custom.body = document.getElementById("color-body").value;
-        }
-
-        // ============ 操控判定 ============
-        document.addEventListener("keydown", e => {
-            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code)) e.preventDefault();
-            if (gameOver || isPaused) return; 
-            
+        // 控制逻辑
+        document.onkeydown = e => {
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)) e.preventDefault();
             if (e.key === 'ArrowUp' && dy === 0) { dx = 0; dy = -1; }
             if (e.key === 'ArrowDown' && dy === 0) { dx = 0; dy = 1; }
             if (e.key === 'ArrowLeft' && dx === 0) { dx = -1; dy = 0; }
             if (e.key === 'ArrowRight' && dx === 0) { dx = 1; dy = 0; }
-        });
+        };
 
-        let tStartX = 0, tStartY = 0;
-        canvas.addEventListener('touchstart', e => {
-            if(gameOver || isPaused) return; 
-            tStartX = e.changedTouches[0].screenX;
-            tStartY = e.changedTouches[0].screenY;
-        }, { passive: true });
-
-        canvas.addEventListener('touchend', e => {
-            if(gameOver || isPaused) return; 
-            let diffX = e.changedTouches[0].screenX - tStartX;
-            let diffY = e.changedTouches[0].screenY - tStartY;
-            if (Math.abs(diffX) < 20 && Math.abs(diffY) < 20) return;
-
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                if (diffX > 0 && dx === 0) { dx = 1; dy = 0; } 
-                else if (diffX < 0 && dx === 0) { dx = -1; dy = 0; }
+        let tsX, tsY;
+        canvas.ontouchstart = e => { tsX = e.touches[0].clientX; tsY = e.touches[0].clientY; };
+        canvas.ontouchend = e => {
+            let dx_t = e.changedTouches[0].clientX - tsX;
+            let dy_t = e.changedTouches[0].clientY - tsY;
+            if (Math.abs(dx_t) > Math.abs(dy_t)) {
+                if (dx_t > 30 && dx === 0) { dx = 1; dy = 0; }
+                else if (dx_t < -30 && dx === 0) { dx = -1; dy = 0; }
             } else {
-                if (diffY > 0 && dy === 0) { dx = 0; dy = 1; } 
-                else if (diffY < 0 && dy === 0) { dx = 0; dy = -1; } 
+                if (dy_t > 30 && dy === 0) { dx = 0; dy = 1; }
+                else if (dy_t < -30 && dy === 0) { dx = 0; dy = -1; }
             }
-        }, { passive: true });
-
-        canvas.addEventListener('touchmove', e => {
-             if (!isPaused && !gameOver) e.preventDefault(); 
-        }, { passive: false });
+        };
 
         init();
     </script>
