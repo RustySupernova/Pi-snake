@@ -1,781 +1,381 @@
-"<!DOCTYPE html>
-
+<!DOCTYPE html>
 <html lang=""zh-CN"">
-
 <head>
-
     <meta charset=""UTF-8"">
-
     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">
-
-    <title>圆周率贪吃蛇 - Pi Snake</title>
-
+    <title>圆周率贪吃蛇 v7.0 - 极坐标拓扑版</title>
+    <link href=""https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"" rel=""stylesheet"">
     <style>
-
         :root {
-
-            --bg-color: #2c3e50;
-
-            --text-color: #ecf0f1;
-
-            --accent-color: #f1c40f;
-
+            --bg-color: #050510; --text-color: #ecf0f1;
+            --accent-color: #00ffcc; --ui-bg: rgba(0, 255, 204, 0.05);
+            --border-color: #003333;
         }
+
+        * { box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 
         body {
-
-            background-color: var(--bg-color);
-
-            color: var(--text-color);
-
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
-            display: flex;
-
-            flex-direction: column;
-
-            align-items: center;
-
-            margin: 0;
-
-            padding: 10px;
-
-            touch-action: none; /* 防止移动端滑动时页面滚动 */
-
-            transition: background-color 0.3s, color 0.3s;
-
+            background-color: var(--bg-color); color: var(--text-color);
+            font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; overflow: hidden;
         }
 
-        h1 { margin: 10px 0; font-size: 28px; }
+        #top-bar {
+            width: 100%; height: 50px; display: flex; justify-content: space-between;
+            align-items: center; padding: 0 15px; background: var(--ui-bg);
+            border-bottom: 2px solid var(--border-color); z-index: 50;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
 
+        #game-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding: 10px; }
+
+        #game-area { 
+            position: relative; border-radius: 50%; /* 圆形边框 */
+            border: 4px solid var(--border-color); overflow: hidden; 
+            background: #000; box-shadow: 0 0 50px rgba(0, 255, 204, 0.1); 
+        }
         
+        canvas { display: block; touch-action: none; }
 
-        /* 顶部信息栏 */
-
-        #ui-panel {
-
-            width: 100%;
-
-            max-width: 500px;
-
-            display: flex;
-
-            justify-content: space-between;
-
-            align-items: center;
-
-            margin-bottom: 10px;
-
-            font-size: 16px;
-
-            font-weight: bold;
-
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); display: none; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 40; color: white; padding: 20px;
+            backdrop-filter: blur(4px); text-align: center; border-radius: 50%;
         }
 
+        #game-over.visible { display: flex; }
+
+        button.action-btn { 
+            padding: 12px 24px; background: transparent; color: var(--accent-color); 
+            border: 2px solid var(--accent-color); border-radius: 8px; cursor: pointer; 
+            font-weight: bold; margin-top: 20px; font-size: 16px; 
+            transition: all 0.2s; text-transform: uppercase; letter-spacing: 2px;
+        }
+        button.action-btn:hover { background: var(--accent-color); color: #000; box-shadow: 0 0 15px var(--accent-color); }
+
+        #pi-display { 
+            margin-top: 15px; font-size: 16px; color: var(--accent-color); 
+            text-align: center; max-width: 500px; word-break: break-all; 
+            font-family: 'VT323', monospace; letter-spacing: 2px; opacity: 0.8; 
+        }
         
-
-        #game-container { position: relative; }
-
+        #target-digit-container { 
+            margin-bottom: 10px; font-size: 16px; display: flex; align-items: center; gap: 10px;
+            background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; border: 1px solid #333;
+        }
         
-
-        canvas {
-
-            background-color: #34495e;
-
-            border: 4px solid #bdc3c7;
-
-            border-radius: 8px;
-
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-
-            display: block;
-
-            transition: filter 0.3s;
-
-        }
-
+        .warn-text { color: #ff3366; font-size: 12px; font-weight: normal; margin-left: 10px; }
         
-
-        /* 显示圆周率的区域 */
-
-        #pi-display {
-
-            width: 100%;
-
-            max-width: 500px;
-
-            word-wrap: break-word;
-
-            text-align: center;
-
-            margin-top: 15px;
-
-            font-size: 18px;
-
-            letter-spacing: 2px;
-
-            color: var(--accent-color);
-
-            height: 60px;
-
-            overflow-y: auto;
-
+        .controls-hint {
+            display: flex; gap: 15px; font-size: 12px; color: #888; margin-top: 10px;
         }
-
-
-
-        /* 菜单按钮 */
-
-        #menu-btn {
-
-            position: absolute;
-
-            top: 15px;
-
-            right: 15px;
-
-            background: rgba(255,255,255,0.2);
-
-            border: none;
-
-            color: var(--text-color);
-
-            padding: 8px 12px;
-
-            border-radius: 5px;
-
-            cursor: pointer;
-
-            font-size: 16px;
-
-            z-index: 10;
-
-        }
-
-
-
-        /* 设置菜单遮罩 */
-
-        #settings-menu {
-
-            position: absolute;
-
-            top: 0; left: 0; width: 100%; height: 100%;
-
-            background: rgba(0, 0, 0, 0.85);
-
-            display: none;
-
-            flex-direction: column;
-
-            justify-content: center;
-
-            align-items: center;
-
-            border-radius: 8px;
-
-            z-index: 20;
-
-            color: white;
-
-        }
-
-        .setting-item { margin: 10px 0; display: flex; align-items: center; gap: 10px; }
-
-        select, input[type=""color""] { padding: 5px; font-size: 16px; border-radius: 4px; }
-
-        
-
-        #game-over {
-
-            position: absolute;
-
-            top: 0; left: 0; width: 100%; height: 100%;
-
-            background: rgba(0, 0, 0, 0.8);
-
-            display: none;
-
-            flex-direction: column;
-
-            justify-content: center;
-
-            align-items: center;
-
-            border-radius: 8px;
-
-            z-index: 15;
-
-        }
-
-        #game-over h2 { color: #e74c3c; font-size: 32px; margin-bottom: 10px; }
-
-        button.action-btn {
-
-            padding: 10px 20px;
-
-            font-size: 16px;
-
-            cursor: pointer;
-
-            background-color: #2ecc71;
-
-            color: white;
-
-            border: none;
-
-            border-radius: 5px;
-
-            margin-top: 15px;
-
-        }
-
-        .instructions { font-size: 12px; opacity: 0.7; margin-top: 5px; text-align: center;}
-
-        
-
-        /* 自定义颜色面板隐藏 */
-
-        #custom-colors { display: none; flex-direction: column; gap: 5px; margin-top: 10px; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px;}
-
+        .controls-hint span { background: #222; padding: 4px 8px; border-radius: 4px; }
     </style>
-
 </head>
-
 <body>
 
-
-
-    <button id=""menu-btn"" onclick=""toggleMenu()"">⚙️ 设置</button>
-
-    <h1>π 贪吃蛇</h1>
-
-    
-
-    <div id=""ui-panel"">
-
-        <div>长度: <span id=""score"">1</span></div>
-
-        <div>找数字: <span id=""target-digit"" style=""color:#e74c3c; font-size: 22px;"">1</span></div>
-
+    <div id=""top-bar"">
+        <h1 style=""font-size:16px; margin:0; letter-spacing:2px; font-family: 'Press Start 2P', cursive;"">π <span style=""color:var(--accent-color)"">POLAR</span></h1>
+        <div style=""font-family: 'VT323'; font-size: 20px; color: var(--accent-color);"">SCORE: <span id=""score-val"">0</span></div>
     </div>
 
-
-
-    <div id=""game-container"">
-
-        <canvas id=""gameCanvas""></canvas>
-
+    <div id=""game-wrapper"">
+        <div id=""target-digit-container"">
+            下一个目标基站: <span id=""target-digit"" style=""color:var(--accent-color); font-size: 28px; font-family: 'Press Start 2P', cursive; text-shadow: 0 0 10px var(--accent-color);"">1</span>
+            <span class=""warn-text"">触碰非目标基站将导致死亡！</span>
+        </div>
         
-
-        <div id=""game-over"">
-
-            <h2>游戏结束!</h2>
-
-            <p>背到了圆周率后 <span id=""final-score"">0</span> 位</p>
-
-            <button class=""action-btn"" onclick=""resetGame()"">再来一次</button>
-
+        <div id=""game-area"">
+            <canvas id=""gameCanvas""></canvas>
+            
+            <div id=""game-over"" class=""overlay"">
+                <h2 style=""font-size:32px; color:#ff3366; font-family: 'Press Start 2P', cursive; margin-bottom: 10px;"">连接断开</h2>
+                <p style=""font-size:16px; color: #aaa;"">你成功打卡了 Pi 的前 <span id=""final-score"" style=""font-weight:bold; color:var(--accent-color); font-size: 24px;"">0</span> 个节点</p>
+                <button id=""reset-btn"" class=""action-btn"">重新校准</button>
+            </div>
         </div>
-
-
-
-        <div id=""settings-menu"">
-
-            <h2>游戏设置</h2>
-
-            <div class=""setting-item"">
-
-                <label>难度 (速度):</label>
-
-                <select id=""speed-select"" onchange=""changeSpeed(this.value)"">
-
-                    <option value=""200"">慢速 (新手)</option>
-
-                    <option value=""150"" selected>中速 (普通)</option>
-
-                    <option value=""100"">快速 (困难)</option>
-
-                    <option value=""60"">极速 (噩梦)</option>
-
-                </select>
-
-            </div>
-
-            <div class=""setting-item"">
-
-                <label>画面风格:</label>
-
-                <select id=""theme-select"" onchange=""changeTheme(this.value)"">
-
-                    <option value=""default"">默认经典</option>
-
-                    <option value=""retro"">复古泛黄</option>
-
-                    <option value=""neon"">赛博霓虹</option>
-
-                    <option value=""custom"">自选颜色</option>
-
-                </select>
-
-            </div>
-
-            <div id=""custom-colors"">
-
-                <div>背景: <input type=""color"" id=""color-bg"" value=""#34495e"" onchange=""updateCustomColors()""></div>
-
-                <div>蛇头: <input type=""color"" id=""color-head"" value=""#2ecc71"" onchange=""updateCustomColors()""></div>
-
-                <div>蛇身: <input type=""color"" id=""color-body"" value=""#1abc9c"" onchange=""updateCustomColors()""></div>
-
-            </div>
-
-            <button class=""action-btn"" onclick=""toggleMenu()"">继续游戏</button>
-
+        
+        <div class=""controls-hint"">
+            <span>⬆️ 远离圆心</span>
+            <span>⬇️ 靠近圆心</span>
+            <span>⬅️ 逆时针</span>
+            <span>➡️ 顺时针</span>
         </div>
-
+        
+        <div id=""pi-display"">3.</div>
     </div>
-
-
-
-    <div id=""pi-display"">3.</div>
-
-    <div class=""instructions"">电脑使用方向键 ⬆️⬇️⬅️➡️ 控制<br>手机直接在屏幕上 👆 滑动控制方向</div>
-
-
 
     <script>
-
         const canvas = document.getElementById(""gameCanvas"");
-
         const ctx = canvas.getContext(""2d"");
-
-        const scoreEl = document.getElementById(""score"");
-
-        const targetDigitEl = document.getElementById(""target-digit"");
-
         const piDisplayEl = document.getElementById(""pi-display"");
-
+        const targetDigitEl = document.getElementById(""target-digit"");
         const gameOverScreen = document.getElementById(""game-over"");
-
-        const settingsMenu = document.getElementById(""settings-menu"");
-
-
-
-        // 圆周率
+        const scoreValEl = document.getElementById(""score-val"");
+        const finalScoreEl = document.getElementById(""final-score"");
 
         const PI_DIGITS = ""14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196"";
-
-
-
-        // 响应式画布尺寸计算
-
-        const maxCanvasSize = 500;
-
-        let canvasSize = Math.min(window.innerWidth - 20, maxCanvasSize);
-
-        canvas.width = canvasSize;
-
-        canvas.height = canvasSize;
-
-
-
-        const GRID_SIZE = 20; // 屏幕固定为20x20个格子
-
-        const TILE_SIZE = canvasSize / GRID_SIZE;
-
-
-
-        let snake, chars, dx, dy, food, piIndex, gameOver, gameLoop, isPaused = false;
-
-        let currentSpeed = 150;
-
         
+        // 极坐标网格系统参数
+        const GRID_R = 12;      // 径向分层（12个同心圆环）
+        const GRID_TH = 36;     // 角向分段（36个扇区，每扇区10度）
+        const SIZE = 480;       // 画布尺寸
+        const CX = SIZE / 2;    // 圆心X
+        const CY = SIZE / 2;    // 圆心Y
+        const MAX_RADIUS = (SIZE / 2) - 10; 
+        const DR = MAX_RADIUS / GRID_R; // 每个环的宽度
 
-        // 主题配置
+        let snake, chars, dr_dir, dth_dir, piIndex, gameOver;
+        let gameTime = 0, lastRealTime = 0, physicsAccumulator = 0;
+        let currentSpeedMs = 150; // 极坐标下需要稍微慢一点给玩家思考时间
+        let nodes = []; // 10个固定的数字基站
+        let pulsePhase = 0;
 
-        let activeTheme = ""default"";
+        function init() {
+            canvas.width = SIZE; canvas.height = SIZE;
+            document.getElementById(""reset-btn"").onclick = resetGame;
+            resetGame();
+            requestAnimationFrame(gameLoop); 
+        }
 
-        const themes = {
+        // 将极坐标 (r, th) 转换为笛卡尔坐标 (x, y) 用于绘制
+        function getCartesian(r, th) {
+            // 取网格单元的中心点
+            let radius = (r - 0.5) * DR;
+            let angle = th * (2 * Math.PI / GRID_TH);
+            return {
+                x: CX + radius * Math.cos(angle),
+                y: CY + radius * Math.sin(angle)
+            };
+        }
 
-            default: { bg: ""#34495e"", head: ""#2ecc71"", body: ""#1abc9c"", food: ""#e74c3c"", glow: false },
-
-            retro:   { bg: ""#d7ccc8"", head: ""#5d4037"", body: ""#795548"", food: ""#d84315"", glow: false },
-
-            neon:    { bg: ""#000000"", head: ""#00ffff"", body: ""#ff00ff"", food: ""#39ff14"", glow: true },
-
-            custom:  { bg: ""#34495e"", head: ""#2ecc71"", body: ""#1abc9c"", food: ""#e74c3c"", glow: false }
-
-        };
-
-
+        // 生成 10 个不重叠的固定基站
+        function initNodes() {
+            nodes = [];
+            let available = [];
+            // 避免最内层(r=1)和最外层(r=12)生成节点，防止太靠近边缘被卡死
+            for(let r = 2; r <= GRID_R - 1; r++) {
+                for(let th = 0; th < GRID_TH; th++) {
+                    available.push({r, th});
+                }
+            }
+            // 随机打乱并抽取 10 个位置
+            available.sort(() => Math.random() - 0.5);
+            
+            for(let i = 0; i < 10; i++) {
+                nodes.push({
+                    val: i.toString(),
+                    r: available[i].r,
+                    th: available[i].th
+                });
+            }
+        }
 
         function resetGame() {
-
-            snake = [{x: Math.floor(GRID_SIZE/2), y: Math.floor(GRID_SIZE/2)}]; 
-
-            chars = [""3.""];
-
-            dx = 0; dy = 0; piIndex = 0; gameOver = false;
-
-            gameOverScreen.style.display = ""none"";
-
-            
-
-            spawnFood();
-
-            updateUI();
-
-            
-
-            if(gameLoop) clearInterval(gameLoop);
-
-            gameLoop = setInterval(update, currentSpeed);
-
-        }
-
-
-
-        function spawnFood() {
-
-            let valid = false;
-
-            while (!valid) {
-
-                food = { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) };
-
-                valid = true;
-
-                for (let segment of snake) {
-
-                    if (segment.x === food.x && segment.y === food.y) { valid = false; break; }
-
-                }
-
+            initNodes();
+            // 找一个不和节点重叠的空地出生
+            let start_r = Math.floor(GRID_R / 2);
+            let start_th = 0;
+            while(nodes.some(n => n.r === start_r && n.th === start_th)) {
+                start_th++;
             }
 
+            snake = [{r: start_r, th: start_th}]; 
+            chars = [""3.""];
+            dr_dir = 0; dth_dir = 0; // 初始静止
+            piIndex = 0; gameOver = false;
+            gameOverScreen.classList.remove(""visible"");
+            updateUI();
         }
-
-
 
         function updateUI() {
-
-            scoreEl.innerText = chars.length;
-
             targetDigitEl.innerText = PI_DIGITS[piIndex];
-
             piDisplayEl.innerText = chars.join("""");
-
+            scoreValEl.innerText = piIndex;
         }
 
-
-
-        function update() {
-
-            if (gameOver || isPaused || (dx === 0 && dy === 0)) return;
-
-
-
-            const newHead = {x: snake[0].x + dx, y: snake[0].y + dy};
-
-
-
-            // 撞墙
-
-            if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
-
-                endGame(); return;
-
+        function updatePhysics() {
+            if (gameOver || (dr_dir === 0 && dth_dir === 0)) return;
+            
+            // 计算极坐标下的新头部位置
+            let new_r = snake[0].r + dr_dir;
+            // 角度环形跨越 (0 到 35)
+            let new_th = (snake[0].th + dth_dir + GRID_TH) % GRID_TH;
+            
+            // 1. 边界碰撞检测 (中心黑洞 和 宇宙边缘)
+            if (new_r < 1 || new_r > GRID_R) return endGame();
+            
+            // 2. 自我碰撞检测
+            for (let s of snake) {
+                if (s.r === new_r && s.th === new_th) return endGame();
             }
 
-            // 撞自己
-
-            for (let segment of snake) {
-
-                if (newHead.x === segment.x && newHead.y === segment.y) {
-
-                    endGame(); return;
-
+            // 移动头部
+            snake.unshift({r: new_r, th: new_th});
+            
+            // 3. 信标碰撞检测
+            let hitNode = nodes.find(n => n.r === new_r && n.th === new_th);
+            
+            if (hitNode) {
+                if (hitNode.val === PI_DIGITS[piIndex]) {
+                    // 吃对了！长度增加
+                    chars.push(PI_DIGITS[piIndex++]);
+                    updateUI();
+                    
+                    // 特别提示：如果下一个数字和当前一样，必须先离开再吃
+                    if (PI_DIGITS[piIndex] === hitNode.val) {
+                        // TODO: 可以加入特殊提示音效或者小闪烁
+                    }
+                } else {
+                    // 碰到了非目标基站 -> 在拓扑模式下，这是致命的障碍墙！
+                    endGame(); 
+                    return;
                 }
-
-            }
-
-
-
-            snake.unshift(newHead);
-
-
-
-            // 吃食物
-
-            if (newHead.x === food.x && newHead.y === food.y) {
-
-                chars.push(PI_DIGITS[piIndex]); 
-
-                piIndex++;
-
-                spawnFood();
-
-                updateUI();
-
             } else {
-
-                snake.pop(); 
-
+                snake.pop(); // 没吃到东西，正常移动，砍掉尾巴
             }
-
-            draw();
-
         }
 
+        // ============ 核心渲染 ============
+        function gameLoop(timestamp) {
+            if (!lastRealTime) lastRealTime = timestamp;
+            let dt = timestamp - lastRealTime;
+            lastRealTime = timestamp;
 
+            if (!gameOver) {
+                gameTime += dt;
+                physicsAccumulator += dt;
+                pulsePhase += dt * 0.005; // 脉冲动画
+
+                while (physicsAccumulator >= currentSpeedMs) {
+                    updatePhysics();
+                    physicsAccumulator -= currentSpeedMs;
+                }
+            }
+            
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
 
         function draw() {
+            ctx.fillStyle = ""rgba(5, 5, 16, 0.9)""; // 拖尾残影效果
+            ctx.fillRect(0, 0, SIZE, SIZE);
 
-            let t = themes[activeTheme];
+            // 1. 绘制极坐标网格背景 (Radar style)
+            ctx.strokeStyle = ""rgba(0, 255, 204, 0.08)"";
+            ctx.lineWidth = 1;
+            
+            // 同心圆 (Rings)
+            for (let r = 1; r <= GRID_R; r++) {
+                ctx.beginPath();
+                ctx.arc(CX, CY, r * DR, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
+            // 射线 (Angles)
+            for (let th = 0; th < GRID_TH; th++) {
+                ctx.beginPath();
+                let angle = th * (2 * Math.PI / GRID_TH);
+                ctx.moveTo(CX + DR * Math.cos(angle), CY + DR * Math.sin(angle)); // 留空中心黑洞
+                ctx.lineTo(CX + MAX_RADIUS * Math.cos(angle), CY + MAX_RADIUS * Math.sin(angle));
+                ctx.stroke();
+            }
 
+            ctx.textAlign = ""center""; ctx.textBaseline = ""middle"";
+            ctx.font = ""bold 14px 'VT323', monospace"";
 
+            // 2. 绘制固定的十个数字基站
+            let currentTarget = PI_DIGITS[piIndex];
+            nodes.forEach(n => {
+                let pos = getCartesian(n.r, n.th);
+                let isTarget = (n.val === currentTarget);
+                
+                // 目标节点：脉冲发光 + 绿蓝相间
+                if (isTarget) {
+                    let pulse = Math.abs(Math.sin(pulsePhase)) * 10 + 5;
+                    ctx.shadowBlur = pulse;
+                    ctx.shadowColor = ""#00ffcc"";
+                    ctx.fillStyle = ""#ffffff"";
+                    
+                    // 画基站外圈发光环
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, 12, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 255, 204, ${Math.abs(Math.sin(pulsePhase)) * 0.5 + 0.2})`;
+                    ctx.fill();
+                    ctx.fillStyle = ""#ffffff"";
+                } else {
+                    // 非目标节点：暗红警告色 (碰到会死)
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = ""rgba(255, 51, 102, 0.4)"";
+                }
+                
+                // 画基站里的数字
+                ctx.font = isTarget ? ""bold 18px 'Press Start 2P', cursive"" : ""14px 'VT323', monospace"";
+                ctx.fillText(n.val, pos.x, pos.y);
+            });
 
-            // 画背景
-
-            ctx.fillStyle = t.bg;
-
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-
-
-            // 设置发光效果 (霓虹主题)
-
-            if(t.glow) {
-
-                ctx.shadowBlur = 15;
-
-                canvas.style.boxShadow = ""0 0 20px #0ff, 0 0 40px #f0f"";
-
-            } else {
-
+            // 3. 绘制蛇的身体
+            snake.forEach((s, i) => {
+                let isHead = (i === 0);
+                let pos = getCartesian(s.r, s.th);
+                
+                // 身体的霓虹拖尾发光
+                ctx.shadowBlur = isHead ? 20 : 10;
+                ctx.shadowColor = isHead ? ""#00ffcc"" : ""#0099ff"";
+                ctx.fillStyle = isHead ? ""#ffffff"" : `rgba(0, 204, 255, ${1 - i/snake.length*0.5})`;
+                
+                // 极坐标下的蛇并不是方形的，画个圆点代表能量节点
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, isHead ? 8 : 6, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 关掉阴影写字
                 ctx.shadowBlur = 0;
+                ctx.fillStyle = isHead ? ""#000000"" : ""#ffffff"";
+                ctx.font = isHead ? ""bold 12px sans-serif"" : ""10px 'VT323'"";
+                ctx.fillText(chars[i], pos.x, pos.y);
+            });
 
-                canvas.style.boxShadow = ""0 10px 20px rgba(0,0,0,0.3)"";
-
-            }
-
-
-
-            // 画食物
-
-            ctx.shadowColor = t.food;
-
-            ctx.fillStyle = t.food;
-
-            ctx.font = ""bold "" + (TILE_SIZE * 0.8) + ""px Arial"";
-
-            ctx.textAlign = ""center"";
-
-            ctx.textBaseline = ""middle"";
-
-            ctx.fillText(PI_DIGITS[piIndex], food.x * TILE_SIZE + TILE_SIZE/2, food.y * TILE_SIZE + TILE_SIZE/2);
-
-
-
-            // 画蛇
-
-            for (let i = 0; i < snake.length; i++) {
-
-                ctx.fillStyle = i === 0 ? t.head : t.body;
-
-                ctx.shadowColor = ctx.fillStyle;
-
-                ctx.fillText(chars[i], snake[i].x * TILE_SIZE + TILE_SIZE/2, snake[i].y * TILE_SIZE + TILE_SIZE/2);
-
-            }
-
+            // 4. 绘制中心黑洞 (Ring 0)
+            ctx.beginPath();
+            ctx.arc(CX, CY, DR * 0.9, 0, 2 * Math.PI);
+            ctx.fillStyle = ""#000000"";
+            ctx.fill();
+            ctx.strokeStyle = ""#ff3366"";
+            ctx.stroke();
         }
-
-
 
         function endGame() {
-
-            gameOver = true;
-
-            gameOverScreen.style.display = ""flex"";
-
-            document.getElementById(""final-score"").innerText = piIndex;
-
+            gameOver = true; 
+            gameOverScreen.classList.add(""visible"");
+            finalScoreEl.innerText = piIndex;
         }
 
-
-
-        // ============ 菜单与设置 ============
-
-        function toggleMenu() {
-
-            isPaused = !isPaused;
-
-            settingsMenu.style.display = isPaused ? ""flex"" : ""none"";
-
-        }
-
-
-
-        function changeSpeed(speed) {
-
-            currentSpeed = parseInt(speed);
-
-            if(!gameOver) {
-
-                clearInterval(gameLoop);
-
-                gameLoop = setInterval(update, currentSpeed);
-
-            }
-
-        }
-
-
-
-        function changeTheme(themeName) {
-
-            activeTheme = themeName;
-
-            document.getElementById(""custom-colors"").style.display = (themeName === 'custom') ? 'flex' : 'none';
-
+        // ============ 极坐标操控逻辑 ============
+        // 极坐标的方向与笛卡尔完全不同，需要重新映射按键含义
+        document.onkeydown = e => {
+            if([""ArrowUp"",""ArrowDown"",""ArrowLeft"",""ArrowRight""].includes(e.key)) e.preventDefault();
             
-
-            // 修改网页整体背景配色
-
-            if(themeName === 'retro') {
-
-                document.documentElement.style.setProperty('--bg-color', '#8d6e63');
-
-                document.documentElement.style.setProperty('--text-color', '#efebe9');
-
-            } else if(themeName === 'neon') {
-
-                document.documentElement.style.setProperty('--bg-color', '#111');
-
-                document.documentElement.style.setProperty('--text-color', '#0ff');
-
-            } else {
-
-                document.documentElement.style.setProperty('--bg-color', '#2c3e50');
-
-                document.documentElement.style.setProperty('--text-color', '#ecf0f1');
-
+            if (e.key === 'ArrowUp' && dr_dir === 0) { 
+                // 向上 = 向外公转 (远离圆心 r++)
+                dr_dir = 1; dth_dir = 0; 
             }
-
-            draw();
-
-        }
-
-
-
-        function updateCustomColors() {
-
-            themes.custom.bg = document.getElementById(""color-bg"").value;
-
-            themes.custom.head = document.getElementById(""color-head"").value;
-
-            themes.custom.body = document.getElementById(""color-body"").value;
-
-            draw();
-
-        }
-
-
-
-        // ============ 控制逻辑 (键盘 + 触摸滑动) ============
-
-        
-
-        // 键盘控制
-
-        document.addEventListener(""keydown"", e => {
-
-            if([""ArrowUp"",""ArrowDown"",""ArrowLeft"",""ArrowRight""].includes(e.code)) e.preventDefault();
-
-            if (e.key === 'ArrowUp' && dy === 0) { dx = 0; dy = -1; }
-
-            if (e.key === 'ArrowDown' && dy === 0) { dx = 0; dy = 1; }
-
-            if (e.key === 'ArrowLeft' && dx === 0) { dx = -1; dy = 0; }
-
-            if (e.key === 'ArrowRight' && dx === 0) { dx = 1; dy = 0; }
-
-        });
-
-
-
-        // 移动端滑动 (Swipe) 控制
-
-        let touchStartX = 0, touchStartY = 0;
-
-        canvas.addEventListener('touchstart', function(e) {
-
-            e.preventDefault(); // 防止双击放大和滚动
-
-            touchStartX = e.changedTouches[0].screenX;
-
-            touchStartY = e.changedTouches[0].screenY;
-
-        }, { passive: false });
-
-
-
-        canvas.addEventListener('touchend', function(e) {
-
-            e.preventDefault();
-
-            let touchEndX = e.changedTouches[0].screenX;
-
-            let touchEndY = e.changedTouches[0].screenY;
-
-            handleSwipe(touchStartX, touchStartY, touchEndX, touchEndY);
-
-        }, { passive: false });
-
-
-
-        function handleSwipe(startX, startY, endX, endY) {
-
-            let diffX = endX - startX;
-
-            let diffY = endY - startY;
-
-            // 设定滑动最小阈值，防止误触
-
-            if (Math.abs(diffX) < 20 && Math.abs(diffY) < 20) return;
-
-
-
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-
-                // 水平滑动
-
-                if (diffX > 0 && dx === 0) { dx = 1; dy = 0; } // 右
-
-                else if (diffX < 0 && dx === 0) { dx = -1; dy = 0; } // 左
-
-            } else {
-
-                // 垂直滑动
-
-                if (diffY > 0 && dy === 0) { dx = 0; dy = 1; } // 下
-
-                else if (diffY < 0 && dy === 0) { dx = 0; dy = -1; } // 上
-
+            if (e.key === 'ArrowDown' && dr_dir === 0) { 
+                // 向下 = 向内坠落 (靠近圆心 r--)
+                dr_dir = -1; dth_dir = 0; 
             }
+            if (e.key === 'ArrowLeft' && dth_dir === 0) { 
+                // 向左 = 逆时针运动 (th--)
+                dr_dir = 0; dth_dir = -1; 
+            }
+            if (e.key === 'ArrowRight' && dth_dir === 0) { 
+                // 向右 = 顺时针运动 (th++)
+                dr_dir = 0; dth_dir = 1; 
+            }
+        };
 
-        }
-
-
-
-        resetGame();
-
-        draw();
-
+        init();
     </script>
-
 </body>
-
-</html>"
+</html>
