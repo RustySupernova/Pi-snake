@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang=""zh-CN"">
+<html lang="zh-CN">
 <head>
-    <meta charset=""UTF-8"">
-    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>圆周率极坐标 v7.1 - 修复版</title>
-    <link href=""https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap"" rel=""stylesheet"">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     <style>
         :root { --bg-color: #050510; --accent-color: #00ffcc; }
         * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; }
@@ -44,29 +44,29 @@
 </head>
 <body>
 
-    <div id=""top-bar"">
-        <div style=""font-family:'Press Start 2P'; font-size:10px;"">PI POLAR</div>
-        <div id=""score-board"" style=""font-family:'VT323'; font-size:24px;"">SCORE: 0</div>
+    <div id="top-bar">
+        <div style="font-family:'Press Start 2P'; font-size:10px;">PI POLAR</div>
+        <div id="score-board" style="font-family:'VT323'; font-size:24px;">SCORE: 0</div>
     </div>
 
-    <div id=""target-box"">NEXT: <span id=""target-digit"">1</span></div>
+    <div id="target-box">NEXT: <span id="target-digit">1</span></div>
 
-    <div id=""game-container"">
-        <canvas id=""gameCanvas""></canvas>
-        <div id=""game-over"" class=""overlay"">
-            <h2 style=""color:#ff3366; font-family:'Press Start 2P'; font-size:18px;"">CRASHED</h2>
-            <p id=""final-stat""></p>
-            <button class=""btn"" onclick=""resetGame()"">RECALIBRATE</button>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="game-over" class="overlay">
+            <h2 style="color:#ff3366; font-family:'Press Start 2P'; font-size:18px;">CRASHED</h2>
+            <p id="final-stat"></p>
+            <button class="btn" onclick="resetGame()">RECALIBRATE</button>
         </div>
     </div>
 
-    <div id=""pi-display"">3.</div>
-    <div style=""font-size:10px; color:#555; margin-top:10px;"">Swipe to Move | ⬆️ Out ⬇️ In ⬅️ CCW ➡️ CW</div>
+    <div id="pi-display">3.</div>
+    <div style="font-size:10px; color:#555; margin-top:10px;">Swipe to Move | ⬆️ Out ⬇️ In ⬅️ CCW ➡️ CW</div>
 
     <script>
-        const canvas = document.getElementById(""gameCanvas"");
-        const ctx = canvas.getContext(""2d"");
-        const PI_STR = ""14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196"";
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const PI_STR = "14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196";
         
         const GRID_R = 10; 
         const GRID_TH = 36;
@@ -95,7 +95,7 @@
 
             // 2. 初始化蛇 (确保不撞基站)
             snake = [{r: 5, th: 18}]; 
-            chars = [""3.""];
+            chars = ["3."];
             piIdx = 0; dr = 0; dth = 0;
             isGameOver = false;
             document.getElementById('game-over').classList.remove('visible');
@@ -104,8 +104,8 @@
 
         function updateUI() {
             document.getElementById('target-digit').innerText = PI_STR[piIdx];
-            document.getElementById('score-board').innerText = ""SCORE: "" + piIdx;
-            document.getElementById('pi-display').innerText = ""3."" + PI_STR.substring(0, piIdx);
+            document.getElementById('score-board').innerText = "SCORE: " + piIdx;
+            document.getElementById('pi-display').innerText = "3." + PI_STR.substring(0, piIdx);
         }
 
         function tick(timestamp) {
@@ -147,15 +147,15 @@
         function die() {
             isGameOver = true;
             document.getElementById('game-over').classList.add('visible');
-            document.getElementById('final-stat').innerText = ""Reached: "" + piIdx;
+            document.getElementById('final-stat').innerText = "Reached: " + piIdx;
         }
 
         function draw() {
-            ctx.fillStyle = ""#050510"";
+            ctx.fillStyle = "#050510";
             ctx.fillRect(0,0,SIZE,SIZE);
 
             // 画网格
-            ctx.strokeStyle = ""rgba(0, 255, 204, 0.1)"";
+            ctx.strokeStyle = "rgba(0, 255, 204, 0.1)";
             for(let i=1; i<=GRID_R; i++){
                 ctx.beginPath(); ctx.arc(CX, CY, i*DR, 0, Math.PI*2); ctx.stroke();
             }
@@ -167,9 +167,9 @@
                 let y = CY + (n.r - 0.5) * DR * Math.sin(ang);
                 let isTarget = (n.val === PI_STR[piIdx]);
                 
-                ctx.fillStyle = isTarget ? ""#00ffcc"" : ""#330011"";
-                ctx.font = isTarget ? ""bold 30px Arial"" : ""20px Arial"";
-                ctx.textAlign = ""center""; ctx.textBaseline = ""middle"";
+                ctx.fillStyle = isTarget ? "#00ffcc" : "#330011";
+                ctx.font = isTarget ? "bold 30px Arial" : "20px Arial";
+                ctx.textAlign = "center"; ctx.textBaseline = "middle";
                 ctx.fillText(n.val, x, y);
             });
 
@@ -178,7 +178,7 @@
                 let ang = s.th * (Math.PI*2/GRID_TH);
                 let x = CX + (s.r - 0.5) * DR * Math.cos(ang);
                 let y = CY + (s.r - 0.5) * DR * Math.sin(ang);
-                ctx.fillStyle = i === 0 ? ""#fff"" : ""rgba(0, 255, 204, 0.6)"";
+                ctx.fillStyle = i === 0 ? "#fff" : "rgba(0, 255, 204, 0.6)";
                 ctx.beginPath(); ctx.arc(x, y, 15, 0, Math.PI*2); ctx.fill();
             });
         }
@@ -200,10 +200,10 @@
         });
 
         window.onkeydown = e => {
-            if(e.key === ""ArrowUp"") { dr = 1; dth = 0; }
-            if(e.key === ""ArrowDown"") { dr = -1; dth = 0; }
-            if(e.key === ""ArrowLeft"") { dth = -1; dr = 0; }
-            if(e.key === ""ArrowRight"") { dth = 1; dr = 0; }
+            if(e.key === "ArrowUp") { dr = 1; dth = 0; }
+            if(e.key === "ArrowDown") { dr = -1; dth = 0; }
+            if(e.key === "ArrowLeft") { dth = -1; dr = 0; }
+            if(e.key === "ArrowRight") { dth = 1; dr = 0; }
         };
 
         init();
