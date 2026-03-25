@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>圆周率极坐标 - 无限相对论版</title>
+    <title>圆周率极坐标 - 无限相对论视界版</title>
     <style>
         :root { --bg-color: #030508; --accent-color: #00ffcc; --danger: #ff3366; }
         * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; }
@@ -19,6 +19,11 @@
         }
         #target-display { font-size: 24px; font-weight: bold; color: var(--danger); text-shadow: 0 0 10px var(--danger); }
         #score-display { font-size: 20px; color: var(--accent-color); }
+        #settings-btn {
+            position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer;
+            z-index: 20; pointer-events: auto; opacity: 0.7; transition: opacity 0.2s;
+        }
+        #settings-btn:hover { opacity: 1; text-shadow: 0 0 10px var(--accent-color); }
         #pi-chain {
             position: absolute; bottom: 20px; width: 90%; text-align: center;
             font-size: 16px; color: var(--accent-color); opacity: 0.6; pointer-events: none;
@@ -30,12 +35,20 @@
             background: rgba(0, 0, 0, 0.85); display: none; flex-direction: column;
             justify-content: center; align-items: center; z-index: 100;
         }
-        #game-over.visible { display: flex; }
-        .btn {
-            padding: 15px 30px; background: transparent; border: 2px solid var(--accent-color);
-            color: var(--accent-color); font-size: 18px; font-weight: bold; cursor: pointer;
-            margin-top: 30px; border-radius: 8px; text-transform: uppercase; letter-spacing: 2px;
+        .overlay.visible { display: flex; }
+        .panel {
+            background: rgba(3, 5, 8, 0.95); border: 1px solid var(--accent-color);
+            padding: 30px; border-radius: 12px; text-align: center; width: 80%; max-width: 350px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2); pointer-events: auto;
         }
+        .btn {
+            padding: 12px 24px; background: transparent; border: 2px solid var(--accent-color);
+            color: var(--accent-color); font-size: 16px; font-weight: bold; cursor: pointer;
+            margin-top: 20px; border-radius: 6px; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .slider-container { margin: 30px 0; text-align: left; }
+        .slider-container label { display: block; margin-bottom: 10px; color: var(--accent-color); }
+        input[type=range] { width: 100%; accent-color: var(--accent-color); }
     </style>
 </head>
 <body>
@@ -45,14 +58,28 @@
         <div id="score-display">NODE: 0</div>
     </div>
     
+    <div id="settings-btn" onclick="openSettings()">⚙️</div>
     <div id="pi-chain">3.</div>
 
     <canvas id="gameCanvas"></canvas>
 
     <div id="game-over" class="overlay">
-        <h2 style="color:var(--danger); font-size: 32px; margin-bottom: 10px;">空间迷失</h2>
-        <p id="final-stat" style="font-size: 20px; color: #aaa;"></p>
-        <button class="btn" onclick="resetGame()">重新校准</button>
+        <div class="panel">
+            <h2 style="color:var(--danger); font-size: 28px; margin-top: 0;">空间迷失</h2>
+            <p id="final-stat" style="font-size: 16px; color: #aaa;"></p>
+            <button class="btn" onclick="resetGame()">重新校准</button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="overlay">
+        <div class="panel">
+            <h2 style="color:var(--accent-color); margin-top: 0; letter-spacing: 2px;">系统设置</h2>
+            <div class="slider-container">
+                <label for="speed-slider">引擎速率 (相对坐标迁移速度)</label>
+                <input type="range" id="speed-slider" min="50" max="250" value="120">
+            </div>
+            <button class="btn" onclick="closeSettings()">恢复运行</button>
+        </div>
     </div>
 
     <script>
@@ -62,22 +89,30 @@
         
         let SIZE, CX, CY;
         const GRID_TH = 36;
-        const DR = 35; // 轨道间距
-        const VISUAL_HEAD_R = 6; // 蛇头固定在屏幕上距离圆心 6 个轨道的距离
-        const VISUAL_HEAD_TH = Math.PI / 2; // 蛇头固定在屏幕正下方 (6点钟方向)
+        const DR = 35; 
+        const VISUAL_HEAD_R = 6; 
+        const VISUAL_HEAD_TH = Math.PI / 2; 
         
         let snake, nodes, piIdx, chars;
         let logical_r, logical_th;
         let anim_r, anim_th; 
         let dr, dth;
-        let isGameOver, lastTime, accumulator;
+        let isGameOver, isPaused, lastTime, accumulator;
+        
+        // 初始移动速度倒数，数值越小速度越快
+        let currentStepMs = 180; 
+
+        document.getElementById('speed-slider').oninput = function() {
+            // 滑块值从50到250，我们将其映射为300ms(慢)到50ms(快)
+            currentStepMs = 300 - this.value;
+        };
 
         function resize() {
             SIZE = Math.max(window.innerWidth, window.innerHeight);
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             CX = window.innerWidth / 2;
-            CY = window.innerHeight / 2 - 50; // 圆心稍微偏上一点，给下方的蛇头留出空间
+            CY = window.innerHeight / 2 - 50; 
         }
         window.addEventListener('resize', resize);
 
@@ -87,21 +122,21 @@
             requestAnimationFrame(tick);
         }
 
+        function getPosKey(r, th) {
+            return `${r},${((th % GRID_TH) + GRID_TH) % GRID_TH}`;
+        }
+
         function spawnNodes() {
             nodes = [];
             let targetVal = PI_STR[piIdx];
             let values = ['0','1','2','3','4','5','6','7','8','9'];
-            
             let usedPositions = new Set();
-            let getPosKey = (r, th) => `${r},${((th % GRID_TH) + GRID_TH) % GRID_TH}`;
-            
             snake.forEach(s => usedPositions.add(getPosKey(s.r, s.th)));
 
             for (let i = 0; i < 10; i++) {
                 let r, th, key;
                 let attempts = 0;
                 do {
-                    // 在蛇头前方及周围生成基站，确保宇宙的延伸感
                     r = logical_r + Math.floor(Math.random() * 8) - 3;
                     th = logical_th + Math.floor(Math.random() * 12) - 6;
                     key = getPosKey(r, th);
@@ -111,8 +146,42 @@
                 usedPositions.add(key);
                 nodes.push({ r: r, th: th, val: i === 0 ? targetVal : values[i] });
             }
-            // 打乱数组，防止目标总是第一个生成
             nodes.sort(() => Math.random() - 0.5);
+        }
+
+        // 视界回收引擎：实时检测脱离观测范围的基站并重构在前方
+        function recycleHorizonNodes() {
+            let usedPositions = new Set();
+            snake.forEach(s => usedPositions.add(getPosKey(s.r, s.th)));
+            nodes.forEach(n => usedPositions.add(getPosKey(n.r, n.th)));
+
+            nodes.forEach(node => {
+                let dR = Math.abs(node.r - logical_r);
+                let dTh = Math.abs((node.th - logical_th) % GRID_TH);
+                if (dTh > GRID_TH / 2) dTh = GRID_TH - dTh; 
+
+                // 如果距离过远，执行量子跃迁
+                if (dR > 12 || dTh > 10) {
+                    usedPositions.delete(getPosKey(node.r, node.th));
+                    
+                    let newR, newTh, key;
+                    let attempts = 0;
+                    do {
+                        // 优先在当前运动方向的前方生成
+                        let rBias = dr !== 0 ? dr * 6 : (Math.random() > 0.5 ? 4 : -4);
+                        let thBias = dth !== 0 ? dth * 6 : (Math.random() > 0.5 ? 4 : -4);
+                        
+                        newR = logical_r + rBias + Math.floor(Math.random() * 7) - 3;
+                        newTh = logical_th + thBias + Math.floor(Math.random() * 7) - 3;
+                        key = getPosKey(newR, newTh);
+                        attempts++;
+                    } while (usedPositions.has(key) && attempts < 50);
+                    
+                    node.r = newR;
+                    node.th = newTh;
+                    usedPositions.add(key);
+                }
+            });
         }
 
         function resetGame() {
@@ -125,8 +194,21 @@
             spawnNodes();
             
             isGameOver = false;
+            isPaused = false;
             document.getElementById('game-over').classList.remove('visible');
+            document.getElementById('settings-modal').classList.remove('visible');
             updateUI();
+        }
+
+        function openSettings() {
+            isPaused = true;
+            document.getElementById('settings-modal').classList.add('visible');
+        }
+
+        function closeSettings() {
+            isPaused = false;
+            lastTime = performance.now(); 
+            document.getElementById('settings-modal').classList.remove('visible');
         }
 
         function updateUI() {
@@ -135,7 +217,6 @@
             document.getElementById('pi-chain').innerText = "3." + PI_STR.substring(0, piIdx);
         }
 
-        // 处理角度无限缠绕的精确碰撞检测
         function checkCollision(p1, p2) {
             if (p1.r !== p2.r) return false;
             let th1 = ((p1.th % GRID_TH) + GRID_TH) % GRID_TH;
@@ -148,7 +229,6 @@
 
             let head = { r: snake[0].r + dr, th: snake[0].th + dth };
             
-            // 无限空间中只检测自身碰撞，没有地图边界
             if (snake.some(s => checkCollision(s, head))) {
                 return die();
             }
@@ -162,13 +242,16 @@
                 if (nodes[hitIndex].val === PI_STR[piIdx]) {
                     chars.push(PI_STR[piIdx++]);
                     updateUI();
-                    spawnNodes(); // 吃到正确的后，在前方坍缩出新的宇宙区域
+                    spawnNodes(); 
                 } else {
                     return die();
                 }
             } else {
                 snake.pop();
             }
+
+            // 每次位移后检查并回收视野外的基站
+            recycleHorizonNodes();
         }
 
         function die() {
@@ -192,18 +275,15 @@
         }
 
         function draw() {
-            ctx.fillStyle = "rgba(3, 5, 8, 0.4)"; // 强烈的运动残影
+            ctx.fillStyle = "rgba(3, 5, 8, 0.4)"; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 平滑插值计算当前镜头的绝对位置
             anim_r = lerp(anim_r, logical_r, 0.15);
             anim_th = lerp(anim_th, logical_th, 0.15);
 
-            // 绘制无限极坐标网格
             ctx.strokeStyle = "rgba(0, 255, 204, 0.08)";
             ctx.lineWidth = 1;
 
-            // 1. 绘制相对可见的同心圆轨道 (前后20层)
             let startR = Math.floor(anim_r) - 20;
             let endR = Math.floor(anim_r) + 20;
             for (let i = startR; i <= endR; i++) {
@@ -215,7 +295,6 @@
                 }
             }
 
-            // 2. 绘制相对旋转的辐射线
             let baseAngle = 2 * Math.PI / GRID_TH;
             let animThRad = anim_th * baseAngle;
             for (let j = 0; j < GRID_TH; j++) {
@@ -226,18 +305,16 @@
                 ctx.stroke();
             }
 
-            // 3. 绘制宇宙中心奇点 (相对游离)
             let centerPos = getScreenPos(anim_r - VISUAL_HEAD_R, anim_th);
             ctx.beginPath();
             ctx.arc(CX, CY, 5, 0, Math.PI * 2);
             ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
             ctx.fill();
 
-            // 4. 绘制基站
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
             nodes.forEach(n => {
                 let pos = getScreenPos(n.r, n.th);
-                if (pos.radius < 0) return; // 被吞没在奇点内
+                if (pos.radius < 0) return; 
                 
                 let isTarget = (n.val === PI_STR[piIdx]);
                 ctx.fillStyle = isTarget ? "rgba(0, 255, 204, 0.2)" : "rgba(255, 51, 102, 0.1)";
@@ -248,7 +325,6 @@
                 ctx.fillText(n.val, pos.x, pos.y);
             });
 
-            // 5. 绘制相对静止的蛇头与拖尾
             snake.forEach((s, i) => {
                 let pos = getScreenPos(s.r, s.th);
                 if (pos.radius < 0) return;
@@ -268,41 +344,43 @@
             let dt = timestamp - lastTime;
             lastTime = timestamp;
 
-            if (!isGameOver) {
+            if (!isGameOver && !isPaused) {
                 if (!accumulator) accumulator = 0;
                 accumulator += dt;
-                let stepTime = 180; // 降低一点速度，让相对运动的视觉冲击更平滑
-                while (accumulator >= stepTime) {
+                
+                while (accumulator >= currentStepMs) {
                     updatePhysics();
-                    accumulator -= stepTime;
+                    accumulator -= currentStepMs;
                 }
             }
             draw();
             requestAnimationFrame(tick);
         }
 
-        // 操作逻辑：改变地图运动方向，蛇头相对静止
         function handleInput(act_dr, act_dth) {
-            dr = act_dr; dth = act_dth;
+            if(!isPaused) { dr = act_dr; dth = act_dth; }
         }
 
-        // 键盘映射
         window.onkeydown = e => {
-            if (e.key === "ArrowLeft") handleInput(0, -1);   // 地图顺时针旋转
-            if (e.key === "ArrowRight") handleInput(0, 1);   // 地图逆时针旋转
-            if (e.key === "ArrowDown") handleInput(-1, 0);   // 地图向外扩散
-            if (e.key === "ArrowUp") handleInput(1, 0);      // 地图向内坍缩
+            if (e.key === "ArrowLeft") handleInput(0, -1);   
+            if (e.key === "ArrowRight") handleInput(0, 1);   
+            if (e.key === "ArrowDown") handleInput(-1, 0);   
+            if (e.key === "ArrowUp") handleInput(1, 0);      
         };
 
-        // 滑动映射
         let startX, startY;
         window.addEventListener('touchstart', e => { 
-            startX = e.touches[0].clientX; startY = e.touches[0].clientY; 
+            if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+                startX = e.touches[0].clientX; startY = e.touches[0].clientY; 
+            }
         }, { passive: false });
         
-        window.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+        window.addEventListener('touchmove', e => {
+            if(e.target.tagName !== 'INPUT') e.preventDefault();
+        }, { passive: false });
 
         window.addEventListener('touchend', e => {
+            if(e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || isPaused) return;
             let dx = e.changedTouches[0].clientX - startX;
             let dy = e.changedTouches[0].clientY - startY;
             if (Math.abs(dx) > Math.abs(dy)) {
